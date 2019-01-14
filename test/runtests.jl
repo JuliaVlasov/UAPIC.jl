@@ -1,6 +1,8 @@
 using Test
 using UAPIC
 
+include("test_poisson_2d.jl")
+
 """
 UA scheme for 4d VP in Fluid-scaling with b(x)
 Update b(x(tn)) every step
@@ -44,9 +46,10 @@ function test_pic2d( ntau )
     
     p = plasma( mesh )
 
-#poisson => sll_f_new_poisson_2d_periodic(xmin,xmax,nx,ymin,ymax,ny)
-#
-#call calcul_rho_m6( p, f )
+    poisson = Poisson(mesh)
+
+    calcul_rho_m6!( f, p )
+
 #call poisson%compute_e_from_rho( f%ex, f%ey, f%r0)
 #call interpol_eb_m6( f, p )
 #

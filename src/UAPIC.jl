@@ -9,7 +9,7 @@ struct Mesh
     nx   :: Int32
     ymin :: Float64
     ymax :: Float64
-    ny   :: Float32
+    ny   :: Int32
     dx   :: Float64
     dy   :: Float64
 
@@ -24,6 +24,8 @@ struct Mesh
 
 end
 
+include("poisson.jl")
+
 export MeshFields
 
 mutable struct MeshFields
@@ -33,7 +35,9 @@ mutable struct MeshFields
     bz :: Array{Float64,2}
     ro :: Array{Float64,2}
 
-    function MeshFields( nx :: Int64, ny :: Int64 )
+    function MeshFields( mesh :: Mesh )
+	    
+	 nx, ny = mesh.nx, mesh.ny
 
          ex = zeros(Float64, (nx+1, ny+1))
          ey = zeros(Float64, (nx+1, ny+1))
@@ -46,9 +50,9 @@ mutable struct MeshFields
 
 end
 
-export Particle
+export Particles
 
-mutable struct Particle
+mutable struct Particles
 
     num :: Int64
     dpx :: Vector{Float32}
@@ -62,7 +66,7 @@ mutable struct Particle
     bpz :: Vector{Float64}
     p   :: Float64
 
-    function Particle( nbpart :: Int64, p :: Float64 )
+    function Particles( nbpart :: Int64, p :: Float64 )
 
         dpx = zeros(Float32, nbpart)
         dpy = zeros(Float32, nbpart)
@@ -97,7 +101,7 @@ function plasma( mesh :: Mesh )
     
     weight = (dimx * dimy) / nbpart
 
-    ele = Particle(nbpart, weight )
+    ele = Particles(nbpart, weight )
     
     k = 1
     while (k<=nbpart)
@@ -131,8 +135,10 @@ function plasma( mesh :: Mesh )
         end
     end
 
-
+    ele
 
 end 
+
+include("compute_rho.jl")
 
 end # module
