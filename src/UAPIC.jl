@@ -24,61 +24,65 @@ struct Mesh
 
 end
 
-include("poisson.jl")
 
 export MeshFields
 
 mutable struct MeshFields
 
+    mesh :: Mesh
+
     ex :: Array{Float64,2}
     ey :: Array{Float64,2}
     bz :: Array{Float64,2}
-    ro :: Array{Float64,2}
+    ρ  :: Array{Float64,2}
 
     function MeshFields( mesh :: Mesh )
 	    
-	 nx, ny = mesh.nx, mesh.ny
+	     nx, ny = mesh.nx, mesh.ny
 
          ex = zeros(Float64, (nx+1, ny+1))
          ey = zeros(Float64, (nx+1, ny+1))
          bz = zeros(Float64, (nx+1, ny+1))
-         ro = zeros(Float64, (nx+1, ny+1))
+         ρ  = zeros(Float64, (nx+1, ny+1))
 
-         new( ex, ey, bz, ro)
+         new( mesh, ex, ey, bz, ρ)
 
     end
 
 end
 
+include("poisson.jl")
+
 export Particles
 
 mutable struct Particles
 
-    num :: Int64
-    dpx :: Vector{Float32}
-    dpy :: Vector{Float32}
-    idx :: Vector{Int32}
-    idy :: Vector{Int32}
-    vpx :: Vector{Float64}
-    vpy :: Vector{Float64}
-    epx :: Vector{Float64}
-    epy :: Vector{Float64}
-    bpz :: Vector{Float64}
-    p   :: Float64
+    nbpart :: Int64
+
+    dx :: Vector{Float32}
+    dy :: Vector{Float32}
+    ix :: Vector{Int32}
+    iy :: Vector{Int32}
+    vx :: Vector{Float64}
+    vy :: Vector{Float64}
+    ex :: Vector{Float64}
+    ey :: Vector{Float64}
+    bz :: Vector{Float64}
+    p  :: Float64
 
     function Particles( nbpart :: Int64, p :: Float64 )
 
-        dpx = zeros(Float32, nbpart)
-        dpy = zeros(Float32, nbpart)
-        idx = zeros(Int32,   nbpart)
-        idy = zeros(Int32,   nbpart)
-        vpx = zeros(Float64, nbpart)
-        vpy = zeros(Float64, nbpart)
-        epx = zeros(Float64, nbpart)
-        epy = zeros(Float64, nbpart)
-        bpz = zeros(Float64, nbpart)
+        dx = zeros(Float32, nbpart)
+        dy = zeros(Float32, nbpart)
+        ix = zeros(Int32,   nbpart)
+        iy = zeros(Int32,   nbpart)
+        vx = zeros(Float64, nbpart)
+        vy = zeros(Float64, nbpart)
+        ex = zeros(Float64, nbpart)
+        ey = zeros(Float64, nbpart)
+        bz = zeros(Float64, nbpart)
 
-        new( nbpart, dpx, dpy, idx, idy, vpx, vpy, epx, epy, bpz, p )
+        new( nbpart, dx, dy, ix, iy, vx, vy, ex, ey, bz, p )
 
     end
 
@@ -100,8 +104,10 @@ function plasma( mesh :: Mesh )
     dimy = mesh.ymax - mesh.ymin
     
     weight = (dimx * dimy) / nbpart
+    println( dimx, dimy )
+    println( weight )
 
-    ele = Particles(nbpart, weight )
+    particles = Particles(nbpart, weight )
     
     k = 1
     while (k<=nbpart)
@@ -111,34 +117,38 @@ function plasma( mesh :: Mesh )
         zi   = (2.0 + alpha) * rand()
         temm = 1.0 + sin(yi) + alpha * cos(kx*xi)
 
-        if (temm>=zi)
-            ele.idx[k] = floor(Int32, xi/dimx*nx)
-            ele.idy[k] = floor(Int32, yi/dimy*ny)
-            ele.dpx[k] = Float32(xi/dx - ele.idx[k])
-            ele.dpy[k] = Float32(yi/dy - ele.idy[k])
+        if (temm >= zi)
+            particles.ix[k] = floor(Int32, xi/dimx*nx)
+            particles.iy[k] = floor(Int32, yi/dimy*ny)
+            particles.dx[k] = Float32(xi/dx - particles.ix[k])
+            particles.dy[k] = Float32(yi/dy - particles.iy[k])
             k = k + 1
         end
+
     end
 
     k = 1
-
     while (k<=nbpart)
+
         xi   = (rand()-0.5)*10.0
         yi   = (rand()-0.5)*10.0
         zi   = rand()
-        temm = (exp(-((xi-2.0)^2+(yi-0.)^2)/2.0)+exp(-((xi+2)^2+yi^2)/2))/2
+        temm = ( exp(-((xi-2)^2 + yi^2)/2)
+               + exp(-((xi+2)^2 + yi^2)/2))/2
 
-        if (temm>=zi)
-            ele.vpx[k] = xi
-            ele.vpy[k] = yi
+        if (temm >= zi)
+            particles.vx[k] = xi
+            particles.vy[k] = yi
             k = k + 1
         end
+
     end
 
-    ele
+    particles
 
 end 
 
 include("compute_rho.jl")
+include("interpolation.jl")
 
 end # module

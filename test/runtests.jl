@@ -11,8 +11,10 @@ Update b(x(tn)) every step
 function test_pic2d( ntau )
 
     nstepmax = 20000	
-    dimx     = 20.
-    dimy     = 20.      
+    kx       = 0.50
+    ky       = 1.0
+    dimx     = 2π/kx
+    dimy     = 2π/ky 
     nx       = 128	
     ny       = 128 
     cfl      = 0.9 
@@ -28,7 +30,6 @@ function test_pic2d( ntau )
     e0       = 1. 
     relativ  = false
 
-    f = MeshFields( nx, ny )
     
     time = 0.
     ep   = 0.1
@@ -43,16 +44,28 @@ function test_pic2d( ntau )
     ymin, ymax = 0.0, dimy
 
     mesh = Mesh( xmin, xmax, nx, ymin, ymax, ny )
+
+    fields = MeshFields( mesh )
     
-    p = plasma( mesh )
+    particles = plasma( mesh )
 
-    poisson = Poisson(mesh)
+    println("particles :", particles.p * particles.nbpart )
 
-    calcul_rho_m6!( f, p )
+    poisson! = Poisson(mesh)
 
-#call poisson%compute_e_from_rho( f%ex, f%ey, f%r0)
-#call interpol_eb_m6( f, p )
-#
+    calcul_rho_m6!( fields, particles )
+
+    println("rho       :", sum(abs.(view(fields.ρ, 1:nx, 1:ny))) )
+
+    poisson!( fields )
+
+    interpol_eb_m6!( particles, fields )
+
+    println(" mesh fields     : ", sum(view(fields.ex,1:nx,1:ny))*mesh.dx*mesh.dy, 
+                             "\t", sum(view(fields.ey,1:nx,1:ny))*mesh.dx*mesh.dy)
+    println(" particle fields : ", sum(particles.ex) , 
+                             "\t", sum(particles.ey) )
+
 #auxpx(1,:)=(p%dpx+p%idx)*dx
 #auxpx(2,:)=(p%dpy+p%idy)*dy
 #

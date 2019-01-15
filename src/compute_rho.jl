@@ -7,18 +7,16 @@
                |  0                           for q >= 3
 """
 
-function f_m6( q )
+function f_m6( q :: Float32 )
 
-    f_m6 = 0 :: Float64
+    f_m6 = 0.0
 
     if ( q < 1.0 ) 
-        f_m6 = (3-q)^5-6.0*(2.0-q)^5+15*(1-q)^5
+        f_m6 = (3-q)^5-6*(2-q)^5+15*(1-q)^5
     elseif ( q >= 1.0 && q < 2.0 )
         f_m6 = (3-q)^5-6*(2-q)^5
     elseif ( q >= 2 && q < 3 )
         f_m6 = (3-q)^5
-    else
-        f_m6 = 0
     end
     
     f_m6 / 120
@@ -27,18 +25,19 @@ end
 
 export calcul_rho_m6!
 
-function calcul_rho_m6!( tm  :: MeshFields, 
-			 ele :: Particles) 
+function calcul_rho_m6!( fields  :: MeshFields, particles :: Particles) 
 
-    fill!(tm.ro , 0.0)
+    fill!(fields.ρ , 0.0)
+    nx = fields.mesh.nx
+    ny = fields.mesh.ny
 
-    for k = 1:ele.num
+    for k = 1:particles.nbpart
     
-	i      = ele.idx[k]
-        j      = ele.idy[k]
-        dpx    = ele.dpx[k]
-        dpy    = ele.dpy[k]
-        weight = ele.p
+	    i      = particles.ix[k]
+        j      = particles.iy[k]
+        dpx    = particles.dx[k]
+        dpy    = particles.dy[k]
+        weight = particles.p
       
         im3 = mod(i-3,nx)+1
         im2 = mod(i-2,nx)+1
@@ -52,89 +51,101 @@ function calcul_rho_m6!( tm  :: MeshFields,
         jp1 = mod(j+1,ny)+1
         jp2 = mod(j+2,ny)+1
         jp3 = mod(j+3,ny)+1
+
+        i = i+1
+        j = j+1
       
-        cm3x = f_m6(3.0+dpx)
-        cp3x = f_m6(3.0-dpx)
-        cm2x = f_m6(2.0+dpx)
-        cp2x = f_m6(2.0-dpx)
-        cm1x = f_m6(1.0+dpx)
-        cp1x = f_m6(1.0-dpx)
+        cm3x = f_m6(3+dpx)
+        cp3x = f_m6(3-dpx)
+        cm2x = f_m6(2+dpx)
+        cp2x = f_m6(2-dpx)
+        cm1x = f_m6(1+dpx)
+        cp1x = f_m6(1-dpx)
         cx   = f_m6(dpx)
         cy   = f_m6(dpy)
-        cp1y = f_m6(1.0-dpy)
-        cm1y = f_m6(1.0+dpy)
-        cp2y = f_m6(2.0-dpy)
-        cm2y = f_m6(2.0+dpy)
-        cp3y = f_m6(3.0-dpy)
-        cm3y = f_m6(3.0+dpy)
+        cp1y = f_m6(1-dpy)
+        cm1y = f_m6(1+dpy)
+        cp2y = f_m6(2-dpy)
+        cm2y = f_m6(2+dpy)
+        cp3y = f_m6(3-dpy)
+        cm3y = f_m6(3+dpy)
       
-	tm.ro[im3,jm3] += cm3x * cm3y * weight
-        tm.ro[im3,jm2] += cm3x * cm2y * weight
-        tm.ro[im3,jm1] += cm3x * cm1y * weight
-        tm.ro[im3,j  ] += cm3x * cy   * weight
-        tm.ro[im3,jp1] += cm3x * cp1y * weight
-        tm.ro[im3,jp2] += cm3x * cp2y * weight
-        tm.ro[im3,jp3] += cm3x * cp3y * weight
+	    fields.ρ[im3,jm3] += cm3x * cm3y * weight
+        fields.ρ[im3,jm2] += cm3x * cm2y * weight
+        fields.ρ[im3,jm1] += cm3x * cm1y * weight
+        fields.ρ[im3,j  ] += cm3x * cy   * weight
+        fields.ρ[im3,jp1] += cm3x * cp1y * weight
+        fields.ρ[im3,jp2] += cm3x * cp2y * weight
+        fields.ρ[im3,jp3] += cm3x * cp3y * weight
       
-	tm.ro[im2,jm3] += cm2x * cm3y * weight
-        tm.ro[im2,jm2] += cm2x * cm2y * weight
-        tm.ro[im2,jm1] += cm2x * cm1y * weight
-        tm.ro[im2,j  ] += cm2x * cy   * weight
-        tm.ro[im2,jp1] += cm2x * cp1y * weight
-        tm.ro[im2,jp2] += cm2x * cp2y * weight
-        tm.ro[im2,jp3] += cm2x * cp3y * weight
+	    fields.ρ[im2,jm3] += cm2x * cm3y * weight
+        fields.ρ[im2,jm2] += cm2x * cm2y * weight
+        fields.ρ[im2,jm1] += cm2x * cm1y * weight
+        fields.ρ[im2,j  ] += cm2x * cy   * weight
+        fields.ρ[im2,jp1] += cm2x * cp1y * weight
+        fields.ρ[im2,jp2] += cm2x * cp2y * weight
+        fields.ρ[im2,jp3] += cm2x * cp3y * weight
       
-	tm.ro[im1,jm3] += cm1x * cm3y * weight
-        tm.ro[im1,jm2] += cm1x * cm2y * weight
-        tm.ro[im1,jm1] += cm1x * cm1y * weight
-        tm.ro[im1,j  ] += cm1x * cy   * weight
-        tm.ro[im1,jp1] += cm1x * cp1y * weight
-        tm.ro[im1,jp2] += cm1x * cp2y * weight
-        tm.ro[im1,jp3] += cm1x * cp3y * weight
+	    fields.ρ[im1,jm3] += cm1x * cm3y * weight
+        fields.ρ[im1,jm2] += cm1x * cm2y * weight
+        fields.ρ[im1,jm1] += cm1x * cm1y * weight
+        fields.ρ[im1,j  ] += cm1x * cy   * weight
+        fields.ρ[im1,jp1] += cm1x * cp1y * weight
+        fields.ρ[im1,jp2] += cm1x * cp2y * weight
+        fields.ρ[im1,jp3] += cm1x * cp3y * weight
       
-	tm.ro[i  ,jm3] += cx   * cm3y * weight
-        tm.ro[i  ,jm2] += cx   * cm2y * weight
-        tm.ro[i  ,jm1] += cx   * cm1y * weight
-        tm.ro[i  ,j  ] += cx   * cy   * weight
-        tm.ro[i  ,jp1] += cx   * cp1y * weight
-        tm.ro[i  ,jp2] += cx   * cp2y * weight
-        tm.ro[i  ,jp3] += cx   * cp3y * weight
+	    fields.ρ[i  ,jm3] += cx   * cm3y * weight
+        fields.ρ[i  ,jm2] += cx   * cm2y * weight
+        fields.ρ[i  ,jm1] += cx   * cm1y * weight
+        fields.ρ[i  ,j  ] += cx   * cy   * weight
+        fields.ρ[i  ,jp1] += cx   * cp1y * weight
+        fields.ρ[i  ,jp2] += cx   * cp2y * weight
+        fields.ρ[i  ,jp3] += cx   * cp3y * weight
       
-	tm.ro[ip1,jm3] += cp1x * cm3y * weight
-        tm.ro[ip1,jm2] += cp1x * cm2y * weight
-        tm.ro[ip1,jm1] += cp1x * cm1y * weight
-        tm.ro[ip1,j  ] += cp1x * cy   * weight
-        tm.ro[ip1,jp1] += cp1x * cp1y * weight
-        tm.ro[ip1,jp2] += cp1x * cp2y * weight
-        tm.ro[ip1,jp3] += cp1x * cp3y * weight
+	    fields.ρ[ip1,jm3] += cp1x * cm3y * weight
+        fields.ρ[ip1,jm2] += cp1x * cm2y * weight
+        fields.ρ[ip1,jm1] += cp1x * cm1y * weight
+        fields.ρ[ip1,j  ] += cp1x * cy   * weight
+        fields.ρ[ip1,jp1] += cp1x * cp1y * weight
+        fields.ρ[ip1,jp2] += cp1x * cp2y * weight
+        fields.ρ[ip1,jp3] += cp1x * cp3y * weight
       
-	tm.ro[ip2,jm3] += cp2x * cm3y * weight
-        tm.ro[ip2,jm2] += cp2x * cm2y * weight
-        tm.ro[ip2,jm1] += cp2x * cm1y * weight
-        tm.ro[ip2,j  ] += cp2x * cy   * weight
-        tm.ro[ip2,jp1] += cp2x * cp1y * weight
-        tm.ro[ip2,jp2] += cp2x * cp2y * weight
-        tm.ro[ip2,jp3] += cp2x * cp3y * weight
+	    fields.ρ[ip2,jm3] += cp2x * cm3y * weight
+        fields.ρ[ip2,jm2] += cp2x * cm2y * weight
+        fields.ρ[ip2,jm1] += cp2x * cm1y * weight
+        fields.ρ[ip2,j  ] += cp2x * cy   * weight
+        fields.ρ[ip2,jp1] += cp2x * cp1y * weight
+        fields.ρ[ip2,jp2] += cp2x * cp2y * weight
+        fields.ρ[ip2,jp3] += cp2x * cp3y * weight
       
-	tm.ro[ip3,jm3] += cp3x * cm3y * weight
-        tm.ro[ip3,jm2] += cp3x * cm2y * weight
-        tm.ro[ip3,jm1] += cp3x * cm1y * weight
-        tm.ro[ip3,j  ] += cp3x * cy   * weight
-        tm.ro[ip3,jp1] += cp3x * cp1y * weight
-        tm.ro[ip3,jp2] += cp3x * cp2y * weight
-        tm.ro[ip3,jp3] += cp3x * cp3y * weight
+	    fields.ρ[ip3,jm3] += cp3x * cm3y * weight
+        fields.ρ[ip3,jm2] += cp3x * cm2y * weight
+        fields.ρ[ip3,jm1] += cp3x * cm1y * weight
+        fields.ρ[ip3,j  ] += cp3x * cy   * weight
+        fields.ρ[ip3,jp1] += cp3x * cp1y * weight
+        fields.ρ[ip3,jp2] += cp3x * cp2y * weight
+        fields.ρ[ip3,jp3] += cp3x * cp3y * weight
 
     end
     
-    tm.ro[1:nx,ny+1] .= view(tm.ro,1:nx,1)
-    tm.ro[nx+1,1:ny] .= view(tm.ro,1,1:ny)
-    tm.ro[nx+1,ny+1] .= view(tm.ro,1,1)
+
+    dimx = fields.mesh.xmax - fields.mesh.xmin
+    dimy = fields.mesh.ymax - fields.mesh.ymin
+
+    dx = fields.mesh.dx
+    dy = fields.mesh.dy
+
+    fields.ρ[1:nx,ny+1] .= view(fields.ρ,1:nx,1)
+    fields.ρ[nx+1,1:ny] .= view(fields.ρ,1,1:ny)
+    fields.ρ[nx+1,ny+1]  = fields.ρ[1,1]
     
-    tm.ro .= tm.ro / (dx*dy)
+    fields.ρ .= fields.ρ / (dx*dy)
     
-    rho_total = sum(view(tm.ro,1:nx,1:ny)) * dx * dy
+    rho_total = sum(view(fields.ρ,1:nx,1:ny)) * dx * dy
+
+    println( " rho_total = $rho_total ")
     
-    tm.ro .= tm.ro .- rho_total/dimx/dimy
+    fields.ρ .= fields.ρ .- rho_total/dimx/dimy
 
 end 
 
