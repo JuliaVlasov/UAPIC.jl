@@ -9,6 +9,48 @@ UA scheme for 4d VP in Fluid-scaling with b(x)
 Update b(x(tn)) every step
 """
 
+macro apply_bc()
+
+    return esc( quote
+
+        while ( xxt1 > xmax )
+            xxt1 = xxt1 - dimx
+        end
+
+        while ( xxt1 < xmin )
+            xxt1 = xxt1 + dimx
+        end
+
+        while ( xxt2 > ymax )
+            xxt2 = xxt2  - dimy
+        end
+
+        while ( xxt2  < ymin )
+            xxt2 = xxt2  + dimy
+        end
+
+    end)
+
+end 
+
+macro energyuse()
+
+    return esc( quote
+
+        tilde[1,:] .= fft(xt[1,:,m])
+        tilde[2,:] .= fft(xt[2,:,m])
+
+        temp[:,1] .= 0.0
+        for n=1:ntau
+            temp[:,1] .+= tilde[:,n]/ntau * exp(1im*ltau[n]*time/ep)
+        end
+
+        xxt1, xxt2 = real(temp[:,1])
+
+    end)
+
+end 
+
 function test_pic2d( ntau )
 
     nstepmax = 20000	
@@ -62,7 +104,7 @@ function test_pic2d( ntau )
 
     calcul_rho_m6!( fields, particles )
 
-    println("rho       :", sum(abs.(view(fields.ρ, 1:nx, 1:ny))) )
+    println("rho :", sum(abs.(view(fields.ρ, 1:nx, 1:ny))) )
 
     poisson!( fields )
 
@@ -84,12 +126,25 @@ function test_pic2d( ntau )
     ds = zeros(Float64, nbpart)
     pl = zeros(ComplexF64, (ntau, nbpart))
     ql = zeros(ComplexF64, (ntau, nbpart))
+
+    tildex = zeros(ComplexF64, (2, ntau, nbpart))
+    tildey = zeros(ComplexF64, (2, ntau, nbpart))
+
+    Et = zeros(ComplexF64, (2, ntau, nbpart))
+
     tilde = zeros(ComplexF64, (2, ntau))
     temp  = zeros(ComplexF64, (2, ntau))
     h     = zeros(ComplexF64, (2, ntau))
     r     = zeros(ComplexF64, (2, ntau))
+    fx    = zeros(ComplexF64, (2, ntau))
+    fy    = zeros(ComplexF64, (2, ntau))
     xt    = zeros(ComplexF64, (2, ntau, nbpart))
     yt    = zeros(ComplexF64, (2, ntau, nbpart))
+
+    fxtemp1 = zeros(ComplexF64, (2, ntau, nbpart))
+    fxtemp0 = zeros(ComplexF64, (2, ntau, nbpart))
+    fytemp1 = zeros(ComplexF64, (2, ntau, nbpart))
+    fytemp0 = zeros(ComplexF64, (2, ntau, nbpart))
 
     for istep = 1:nstep
 
@@ -103,7 +158,8 @@ function test_pic2d( ntau )
 
             for i=2:ntau
                 pl[i,m] = ep * 1im*(exp(-1im*ltau[i]*ds[m]/ep)-1)/ltau[i]
-                ql[i,m] = ep * (ep*(1-exp(-1im*ltau[i]*ds[m]/ep))-1im*ltau[i]*ds[m])/ltau[i]^2
+                ql[i,m] = ep * (ep*(1-exp(-1im*ltau[i]*ds[m]/ep))
+                                -1im*ltau[i]*ds[m])/ltau[i]^2
             end
 
             # preparation initial data
@@ -127,11 +183,11 @@ function test_pic2d( ntau )
 
                 temp[1,1]=((  cos(tau[n])*particles.vy[m]
                             - sin(tau[n])*particles.vx[m])
-                           * interv + particles.ex[m])/bx[m]
+                            * interv + particles.ex[m])/bx[m]
 
-                temp[2,1]=(( -cos(tau[n])*particles.vx[m]
-                             -sin(tau[n])*particles.vy[m])
-                           * interv + particles.ey[m])/bx[m]
+                temp[2,1]=(( - cos(tau[n])*particles.vx[m]
+                             - sin(tau[n])*particles.vy[m])
+                             * interv + particles.ey[m])/bx[m]
 
                 r[1,n] = cos(tau[n])*temp[1,1]-sin(tau[n]) * temp[2,1]
                 r[2,n] = sin(tau[n])*temp[1,1]+cos(tau[n]) * temp[2,1]
@@ -155,178 +211,204 @@ function test_pic2d( ntau )
 
         end
 
-#    do n=0,ntau-1
-#        do m=1,nbpart
-#            xxt=dreal(xt(:,n,m))
-#            call apply_bc()
-#            p%idx[m] = floor(xxt(1)/dimx*nx)
-#            p%dpx[m] = real(xxt(1)/dx- p%idx[m], f64)
-#            p%idy[m] = floor(xxt(2)/dimy*ny)
-#            p%dpy[m] = real(xxt(2)/dy- p%idy[m], f64)
-#        end
-#        call interpol_eb_m6( f, p )
-#        Et(1,n,:)=p%epx
-#        Et(2,n,:)=p%epy
-#    end
+        for n=1:ntau
+            for m=1:nbpart
+                xxt1, xxt2 = real(xt[1,n,m]), real(xt[2,n,m])
+                @apply_bc()
+                particles.ix[m] = trunc(Int32, xxt1/dimx*nx)
+                particles.dx[m] = xxt1/dx - particles.ix[m]
+                particles.iy[m] = trunc(Int32, xxt2/dimy*ny)
+                particles.dy[m] = xxt2/dy - particles.iy[m]
+            end
+            interpol_eb_m6!( particles, fields )
+            Et[1,n,:] .= particles.ex
+            Et[2,n,:] .= particles.ey
+        end
 
-#    !--time iteration---
-#    !--prediction--
-#    do m=1,nbpart
-#        do n=0,ntau-1
-#            fx(1,n)=(cos(tau[n])*yt(1,n,m)+sin(tau[n])*yt(2,n,m))/bx[m]
-#            fx(2,n)=(-sin(tau[n])*yt(1,n,m)+cos(tau[n])*yt(2,n,m))/bx[m]
-#            interv=(1.+0.5*sin(dreal(xt(1,n,m)))*sin(dreal(xt(2,n,m)))-bx[m])/ep
-#            temp(1,n)=Et(1,n,m)+(cos(tau[n])*yt(2,n,m)-sin(tau[n])*yt(1,n,m))*interv
-#            temp(2,n)=Et(2,n,m)+(-cos(tau[n])*yt(1,n,m)-sin(tau[n])*yt(2,n,m))*interv
-#            fy(1,n)=(cos(tau[n])*temp(1,n)-sin(tau[n])*temp(2,n))/bx[m]
-#            fy(2,n)=(sin(tau[n])*temp(1,n)+cos(tau[n])*temp(2,n))/bx[m]
-#        end
-#        call sll_s_fft_exec_c2c_1d(PlnF, fx(1,:), tilde(1,:))
-#        call sll_s_fft_exec_c2c_1d(PlnF, fx(2,:), tilde(2,:))
-#        fxtemp0(:,:,m)=tilde/ntau!
-#        call sll_s_fft_exec_c2c_1d(PlnF, fy(1,:), tilde(1,:))
-#        call sll_s_fft_exec_c2c_1d(PlnF, fy(2,:), tilde(2,:))
-#        fytemp0(:,:,m)=tilde/ntau
-#        call sll_s_fft_exec_c2c_1d(PlnF, xt(1,:,m), tildex(1,:,m))
-#        call sll_s_fft_exec_c2c_1d(PlnF, xt(2,:,m), tildex(2,:,m))
-#        do n=0,ntau-1
-#            temp(:,n)=exp(-1im*ltau[n]*ds[m]/ep)*tildex(:,n,m)/ntau+pl(n,m)*fxtemp0(:,n,m)
-#        end
-#        call sll_s_fft_exec_c2c_1d(PlnB, temp(1,:), xt(1,:,m))!xt(t1)
-#        call sll_s_fft_exec_c2c_1d(PlnB, temp(2,:), xt(2,:,m))
-#        call sll_s_fft_exec_c2c_1d(PlnF, yt(1,:,m), tildey(1,:,m))
-#        call sll_s_fft_exec_c2c_1d(PlnF, yt(2,:,m), tildey(2,:,m))
-#        do n=0,ntau-1
-#            temp(:,n)=exp(-1im*ltau[n]*ds[m]/ep)*tildey(:,n,m)/ntau+pl(n,m)*fytemp0(:,n,m)
-#        end
-#        call sll_s_fft_exec_c2c_1d(PlnB, temp(1,:), yt(1,:,m))!yt(t1)
-#        call sll_s_fft_exec_c2c_1d(PlnB, temp(2,:), yt(2,:,m))
-#    end
-#    do m=1,nbpart
-#        time=ds[m]
-#        call energyuse()
-#        call apply_bc()
-#        p%idx[m] = floor(xxt(1)/dimx*nx)
-#        p%dpx[m] = real(xxt(1)/dx- p%idx[m], f64)
-#        p%idy[m] = floor(xxt(2)/dimy*ny)
-#        p%dpy[m] = real(xxt(2)/dy- p%idy[m], f64)
-#    end
-#    call calcul_rho_m6( p, f )
-#    call poisson%compute_e_from_rho( f%ex, f%ey, f%r0)
-#    do n=0,ntau-1
-#        do m=1,nbpart
-#            xxt=dreal(xt(:,n,m))
-#            call apply_bc()
-#            p%idx[m] = floor(xxt(1)/dimx*nx)
-#            p%dpx[m] = real(xxt(1)/dx- p%idx[m], f64)
-#            p%idy[m] = floor(xxt(2)/dimy*ny)
-#            p%dpy[m] = real(xxt(2)/dy- p%idy[m], f64)
-#        end
-#        call interpol_eb_m6( f, p )
-#        Et(1,n,:)=p%epx
-#        Et(2,n,:)=p%epy
-#    end
-#    !-correction-
-#    do m=1,nbpart
-#        do n=0,ntau-1
-#            fx(1,n)=(cos(tau[n])*yt(1,n,m)+sin(tau[n])*yt(2,n,m))/bx[m]
-#            fx(2,n)=(-sin(tau[n])*yt(1,n,m)+cos(tau[n])*yt(2,n,m))/bx[m]
-#            interv=(1.+0.5*sin(dreal(xt(1,n,m)))*sin(dreal(xt(2,n,m)))-bx[m])/ep
-#            temp(1,n)=Et(1,n,m)+(cos(tau[n])*yt(2,n,m)-sin(tau[n])*yt(1,n,m))*interv
-#            temp(2,n)=Et(2,n,m)+(-cos(tau[n])*yt(1,n,m)-sin(tau[n])*yt(2,n,m))*interv
-#            fy(1,n)=(cos(tau[n])*temp(1,n)-sin(tau[n])*temp(2,n))/bx[m]
-#            fy(2,n)=(sin(tau[n])*temp(1,n)+cos(tau[n])*temp(2,n))/bx[m]
-#        end
-#        call sll_s_fft_exec_c2c_1d(PlnF, fx(1,:), tilde(1,:))
-#        call sll_s_fft_exec_c2c_1d(PlnF, fx(2,:), tilde(2,:))
-#        fxtemp1(:,:,m)=tilde/ntau!
-#        call sll_s_fft_exec_c2c_1d(PlnF, fy(1,:), tilde(1,:))
-#        call sll_s_fft_exec_c2c_1d(PlnF, fy(2,:), tilde(2,:))
-#        fytemp1(:,:,m)=tilde/ntau
-#        do n=0,ntau-1
-#            temp(:,n)=exp(-1im*ltau[n]*ds[m]/ep)*tildex(:,n,m)/ntau+pl(n,m)*fxtemp0(:,n,m)+ql(n,m)*(fxtemp1(:,n,m)-fxtemp0(:,n,m))/ds[m]
-#        end
-#        call sll_s_fft_exec_c2c_1d(PlnB, temp(1,:), xt(1,:,m))!xt(t1)
-#        call sll_s_fft_exec_c2c_1d(PlnB, temp(2,:), xt(2,:,m))
-#        do n=0,ntau-1
-#            temp(:,n)=exp(-1im*ltau[n]*ds[m]/ep)*tildey(:,n,m)/ntau+pl(n,m)*fytemp0(:,n,m)+ql(n,m)*(fytemp1(:,n,m)-fytemp0(:,n,m))/ds[m]
-#        end
-#        call sll_s_fft_exec_c2c_1d(PlnB, temp(1,:), yt(1,:,m))!yt(t1)
-#        call sll_s_fft_exec_c2c_1d(PlnB, temp(2,:), yt(2,:,m))
-#    end
-#    do m=1,nbpart
-#        time=ds[m]
-#        call energyuse()
-#        call apply_bc()
-#        p%idx[m] = floor(xxt(1)/dimx*nx)
-#        p%dpx[m] = real(xxt(1)/dx- p%idx[m], f64)
-#        p%idy[m] = floor(xxt(2)/dimy*ny)
-#        p%dpy[m] = real(xxt(2)/dy- p%idy[m], f64)
-#    end
-#    auxpx(:)=(p%dpx+p%idx)*dx
-#    auxpy(:)=(p%dpy+p%idy)*dy
-#    call calcul_rho_m6( p, f )
-#    call poisson%compute_e_from_rho( f%ex, f%ey, f%r0)
-#    do n=0,ntau-1
-#        do m=1,nbpart
-#            xxt=dreal(xt(:,n,m))
-#            call apply_bc()
-#            p%idx[m] = floor(xxt(1)/dimx*nx)
-#            p%dpx[m] = real(xxt(1)/dx- p%idx[m], f64)
-#            p%idy[m] = floor(xxt(2)/dimy*ny)
-#            p%dpy[m] = real(xxt(2)/dy- p%idy[m], f64)
-#        end
-#        call interpol_eb_m6( f, p )
-#        Et(1,n,:)=p%epx
-#        Et(2,n,:)=p%epy
-#    end
-#    do m=1,nbpart
-#        call sll_s_fft_exec_c2c_1d(PlnF, yt(1,:,m),tilde(1,:))
-#        call sll_s_fft_exec_c2c_1d(PlnF, yt(2,:,m),tilde(2,:))
-#        temp(:,1)=0.
-#        do n=0,ntau-1
-#            temp(:,1)=temp(:,1)+tilde(:,n)/ntau*cdexp(1im*ltau[n]*ds[m]/ep)
-#        end
-#        p%vpx[m]=dreal(cos(ds[m]/ep)*temp(1,1)+sin(ds[m]/ep)*temp(2,1))
-#        p%vpy[m]=dreal(cos(ds[m]/ep)*temp(2,1)-sin(ds[m]/ep)*temp(1,1))
-#    end
+        #  !--time iteration
+        #  prediction--
+        for m=1:nbpart
+
+            for n=1:ntau
+
+                fx[1,n]   = ( cos(tau[n]) * yt[1,n,m] + sin(tau[n])*yt[2,n,m])/bx[m]
+                fx[2,n]   = (-sin(tau[n]) * yt[1,n,m] + cos(tau[n])*yt[2,n,m])/bx[m]
+
+                interv    = (1 + 0.5*sin(real(xt[1,n,m]))*sin(real(xt[2,n,m]))-bx[m])/ep
+
+                temp[1,n] = Et[1,n,m]+( cos(tau[n])*yt[2,n,m]-sin(tau[n])*yt[1,n,m])*interv
+                temp[2,n] = Et[2,n,m]+(-cos(tau[n])*yt[1,n,m]-sin(tau[n])*yt[2,n,m])*interv
+
+                fy[1,n]   = (cos(tau[n])*temp[1,n]-sin(tau[n])*temp[2,n])/bx[m]
+                fy[2,n]   = (sin(tau[n])*temp[1,n]+cos(tau[n])*temp[2,n])/bx[m]
+
+            end
+
+            tilde[1,:] .= fft(fx[1,:])
+            tilde[2,:] .= fft(fx[2,:])
+
+            fxtemp0[:,:,m] .= tilde/ntau
+
+            tilde[1,:] .= fy[1,:]
+            tilde[2,:] .= fy[2,:]
+
+            fytemp0[:,:,m] .= tilde/ntau
+
+            tildex[1,:,m] .= xt[1,:,m] 
+            tildex[2,:,m] .= xt[2,:,m] 
+
+            for n=1:ntau
+                temp[:,n] = (exp.(-1im*ltau[n]*ds[m]/ep) .* tildex[:,n,m]/ntau 
+                             .+ pl[n,m] 
+                             .* fxtemp0[:,n,m])
+            end
+
+            xt[1,:,m] = ifft(temp[1,:])
+            xt[2,:,m] = ifft(temp[2,:])
+
+            tildey[1,:,m] = fft(yt[1,:,m]) 
+            tildey[2,:,m] = fft(yt[2,:,m]) 
+
+            for n=1:ntau
+                temp[:,n] = (exp(-1im*ltau[n]*ds[m]/ep) .* tildey[:,n,m]/ntau 
+                             .+ pl[n,m]*fytemp0[:,n,m])
+            end
+
+            yt[1,:,m] = ifft(temp[1,:]) 
+            yt[2,:,m] = ifft(temp[2,:]) 
+
+        end
+
+        for m = 1:nbpart
+            time = ds[m]
+            @energyuse( )
+            @apply_bc( )
+            particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
+            particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
+            particles.iy[m] = trunc(Int32,   xxt2/dimy*ny)
+            particles.dy[m] = Float32(xxt2/dy - particles.iy[m])
+        end
+
+        calcul_rho_m6!( fields, particles )
+        poisson!( fields )
+
+
+        for n=1:ntau
+            for m=1:nbpart
+                xxt1, xxt2 = real(xt[:,n,m])
+                @apply_bc( )
+                particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
+                particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
+                particles.iy[m] = trunc(Int32,   xxt2/dimy*ny)
+                particles.dy[m] = Float32(xxt2/dy - particles.iy[m])
+            end
+
+            interpol_eb_m6!( particles, fields )
+
+            Et[1,n,:]=particles.ex
+            Et[2,n,:]=particles.ey
+
+        end
+
+        # correction
+        for m=1:nbpart
+
+            for n=1:ntau
+
+                fx[1,n]=( cos(tau[n])*yt[1,n,m]+sin(tau[n])*yt[2,n,m])/bx[m]
+                fx[2,n]=(-sin(tau[n])*yt[1,n,m]+cos(tau[n])*yt[2,n,m])/bx[m]
+
+                interv=(1 + 0.5*sin(real(xt[1,n,m]))*sin(real(xt[2,n,m]))-bx[m])/ep
+
+                temp[1,n] = Et[1,n,m]+( cos(tau[n])*yt[2,n,m]-sin(tau[n])*yt[1,n,m])*interv
+                temp[2,n] = Et[2,n,m]+(-cos(tau[n])*yt[1,n,m]-sin(tau[n])*yt[2,n,m])*interv
+
+                fy[1,n] = (cos(tau[n])*temp[1,n]-sin(tau[n])*temp[2,n])/bx[m]
+                fy[2,n] = (sin(tau[n])*temp[1,n]+cos(tau[n])*temp[2,n])/bx[m]
+
+            end
+
+            tilde[1,:] .= fft(fx[1,:]) 
+            tilde[2,:] .= fft(fx[2,:]) 
+
+            fxtemp1[:,:,m] = tilde/ntau
+
+            tilde[1,:] .= fft(fy[1,:]) 
+            tilde[2,:] .= fft(fy[2,:]) 
+
+            fytemp1[:,:,m] = tilde/ntau
+
+            for n=1:ntau
+                temp[:,n] = ( exp(-1im*ltau[n]*ds[m]/ep)*tildex[:,n,m]/ntau
+                              .+ pl[n,m] * fxtemp0[:,n,m] .+ ql[n,m] * 
+                                (fxtemp1[:,n,m] .- fxtemp0[:,n,m]) / ds[m] )
+            end
+
+            xt[1,:,m] .= ifft(temp[1,:])
+            xt[2,:,m] .= ifft(temp[2,:])
+
+            for n=1:ntau
+                temp[:,n] = ( exp(-1im*ltau[n]*ds[m]/ep)*tildey[:,n,m]/ntau 
+                             .+ pl[n,m]*fytemp0[:,n,m]
+                             .+ ql[n,m]*(fytemp1[:,n,m]-fytemp0[:,n,m])/ds[m])
+            end
+
+            yt[1,:,m] .= ifft(temp[1,:]) 
+            yt[2,:,m] .= ifft(temp[2,:]) 
+
+        end
+
+        for m=1:nbpart
+
+            time = ds[m]
+            @energyuse()
+            @apply_bc( )
+            particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
+            particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
+            particles.iy[m] = trunc(Int32,   xxt2/dimy*ny)
+            particles.dy[m] = Float32(xxt2/dy - particles.iy[m])
+
+        end
+
+        calcul_rho_m6!( fields, particles )
+        poisson!( fields )
+        println(sqrt(sum(fields.ex.^2 .+ fields.ey.^2)*dx*dx))
+
+        for n=1:ntau
+
+            for m=1:nbpart
+                xxt1, xxt2 = real(xt[:,n,m])
+                @apply_bc( )
+                particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
+                particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
+                particles.iy[m] = trunc(Int32,   xxt2/dimy*ny)
+                particles.dy[m] = Float32(xxt2/dy - particles.iy[m])
+            end
+
+            interpol_eb_m6!( particles, fields )
+
+            Et[1,n,:] .= particles.ex
+            Et[2,n,:] .= particles.ey
+
+        end
+
+        for m=1:nbpart
+
+            tilde[1,:] .= fft(yt[1,:,m]) 
+            tilde[2,:] .= fft(yt[2,:,m]) 
+
+            temp[:,1] .= 0.
+
+            for n=1:ntau
+                temp[:,1] .+= tilde[:,n]/ntau * exp(1im*ltau[n]*ds[m]/ep)
+            end
+
+            particles.vx[m] = real(cos(ds[m]/ep)*temp[1,1]+sin(ds[m]/ep)*temp[2,1])
+            particles.vy[m] = real(cos(ds[m]/ep)*temp[2,1]-sin(ds[m]/ep)*temp[1,1])
+
+        end
     end
 
-#open(unit=851,file='T5.dat')
-#do i=1,nx
-#do j=1,ny
-#write(851,*)f%r0(i,j)
-#end
-#end
-#close(851)
-#
-#
-#contains
-#
-#subroutine apply_bc()
-#do while ( xxt(1) > xmax )
-#xxt(1) = xxt(1) - dimx
-#end
-#do while ( xxt(1) < xmin )
-#xxt(1)= xxt(1) + dimx
-#end
-#do while ( xxt(2) > ymax )
-#xxt(2)  = xxt(2)  - dimy
-#end
-#do while ( xxt(2)  < ymin )
-#xxt(2) = xxt(2)  + dimy
-#end
-#end subroutine apply_bc
-#
-#subroutine energyuse()
-#call sll_s_fft_exec_c2c_1d(PlnF, xt(1,:,m),tilde(1,:))
-#call sll_s_fft_exec_c2c_1d(PlnF, xt(2,:,m),tilde(2,:))
-#temp(:,1)=0.
-#do n=0,ntau-1
-#temp(:,1)=temp(:,1)+tilde(:,n)/ntau*cdexp(1im*ltau[n]*time/ep)
-#end
-#xxt=dreal(temp(:,1))
-#end subroutine
 
     true
 
@@ -334,4 +416,4 @@ end
 
 const ntau = 16
 
-@test test_pic2d( ntau )
+@time test_pic2d( ntau )
