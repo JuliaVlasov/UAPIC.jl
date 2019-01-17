@@ -1,6 +1,6 @@
 export interpol_eb_m6!
 
-function interpol_eb_m6!( particles, fields )
+function interpol_eb_m6!( particles :: Particles, fields :: MeshFields )
 
     nx = fields.mesh.nx
     ny = fields.mesh.ny
