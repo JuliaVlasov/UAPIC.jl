@@ -94,7 +94,7 @@ function plasma( mesh :: Mesh )
 
     eps    = 1.e-12
     vth    = 1.0
-    nbpart = 204800
+    nbpart = 2048
     kx     = 0.5
     alpha  = 0.05
 
