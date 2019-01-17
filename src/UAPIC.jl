@@ -90,11 +90,8 @@ end
 
 export plasma
 
-function plasma( mesh :: Mesh )
+function plasma( mesh :: Mesh, nbpart :: Int64 )
 
-    eps    = 1.e-12
-    vth    = 1.0
-    nbpart = 2048
     kx     = 0.5
     alpha  = 0.05
 
@@ -103,6 +100,7 @@ function plasma( mesh :: Mesh )
     dimx = mesh.xmax - mesh.xmin
     dimy = mesh.ymax - mesh.ymin
     
+    println(dimx * dimy)
     weight = (dimx * dimy) / nbpart
     println( dimx, dimy )
     println( weight )
@@ -118,8 +116,8 @@ function plasma( mesh :: Mesh )
         temm = 1.0 + sin(yi) + alpha * cos(kx*xi)
 
         if (temm >= zi)
-            particles.ix[k] = floor(Int32, xi/dimx*nx)
-            particles.iy[k] = floor(Int32, yi/dimy*ny)
+            particles.ix[k] = trunc(Int32, xi/dimx*nx)
+            particles.iy[k] = trunc(Int32, yi/dimy*ny)
             particles.dx[k] = Float32(xi/dx - particles.ix[k])
             particles.dy[k] = Float32(yi/dy - particles.iy[k])
             k = k + 1
@@ -130,8 +128,8 @@ function plasma( mesh :: Mesh )
     k = 1
     while (k<=nbpart)
 
-        xi   = (rand()-0.5)*10.0
-        yi   = (rand()-0.5)*10.0
+        xi   = (rand()-0.5)*10
+        yi   = (rand()-0.5)*10
         zi   = rand()
         temm = ( exp(-((xi-2)^2 + yi^2)/2)
                + exp(-((xi+2)^2 + yi^2)/2))/2

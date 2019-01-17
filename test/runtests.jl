@@ -60,18 +60,7 @@ function test_pic2d( ntau )
     dimy     = 2π/ky 
     nx       = 128	
     ny       = 128 
-    cfl      = 0.9 
     tfinal   = 1.0 
-    idiag    = 10  
-    bcname   = :period
-    exext    = 0.	
-    eyext    = 0.	
-    bzext    = 0.	
-    charge   = 1.0 
-    masse    = 1.0  
-    c        = 8.
-    e0       = 1. 
-    relativ  = false
 
     time = 0.
     ep   = 0.1
@@ -96,17 +85,40 @@ function test_pic2d( ntau )
 
     fields = MeshFields( mesh )
     
-    particles = plasma( mesh )
+    nbpart = 1024000
 
-    nbpart = particles.nbpart
+    particles = plasma( mesh, nbpart )
+
 
     poisson! = Poisson(mesh)
 
     calcul_rho_m6!( fields, particles )
 
-    println("rho :", sum(abs.(view(fields.ρ, 1:nx, 1:ny))) )
+    println("∑ |rho| = ", sum(abs.(fields.ρ))*dx*dy)
+
+    x = range(0, stop=dimx, length=nx+1) |> collect
+    y = range(0, stop=dimy, length=ny+1) |> collect
+
+    fields.ρ .= (1 .+ 0.05 * cos.(0.5 * x )) .+ sin.(y')
 
     poisson!( fields )
+    println(sqrt(sum(fields.ex.^2 .+ fields.ey.^2)*dx*dy))
+
+    open("fields.dat", "w") do f
+        for i in 1:nx+1
+        for j in 1:ny+1
+		write(f, 
+		      string((i-1)*dx), " ", 
+		      string((j-1)*dy), " ",  
+		      string(fields.ex[i,j]), " ", 
+		      string(fields.ey[i,j]), " ",
+		      string(fields.ρ[i,j]), "\n")
+        end
+	write(f,"\n")
+        end
+    end
+
+    return true
 
     interpol_eb_m6!( particles, fields )
 
@@ -115,6 +127,14 @@ function test_pic2d( ntau )
     println(" particle fields : ", sum(particles.ex) , 
                              "\t", sum(particles.ey) )
 
+    println(" ep   = $ep    ")
+    println(" dt   = $dt    ")
+    println(" dx   = $dx    ")
+    println(" dy   = $dy    ")
+    println(" dimx = $dimx  ")
+    println(" dimy = $dimy  ")
+    println(" npp  = $nbpart")
+    println(" ntau = $ntau  ")
     
     auxpx = zeros(Float64, nbpart)
     auxpy = zeros(Float64, nbpart)
@@ -291,6 +311,7 @@ function test_pic2d( ntau )
 
         calcul_rho_m6!( fields, particles )
         poisson!( fields )
+        println(sqrt(sum(fields.ex.^2 .+ fields.ey.^2)*dx*dy))
 
 
         for n=1:ntau
@@ -372,7 +393,7 @@ function test_pic2d( ntau )
 
         calcul_rho_m6!( fields, particles )
         poisson!( fields )
-        println(sqrt(sum(fields.ex.^2 .+ fields.ey.^2)*dx*dx))
+        println(sqrt(sum(fields.ex.^2 .+ fields.ey.^2)*dx*dy))
 
         for n=1:ntau
 
