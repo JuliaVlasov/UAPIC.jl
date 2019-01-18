@@ -85,7 +85,7 @@ function test_pic2d( ntau )
 
     fields = MeshFields( mesh )
     
-    nbpart = 1024000
+    nbpart = 2048
 
     particles = plasma( mesh, nbpart )
 
@@ -101,24 +101,9 @@ function test_pic2d( ntau )
 
     fields.ρ .= (1 .+ 0.05 * cos.(0.5 * x )) .+ sin.(y')
 
-    poisson!( fields )
-    println(sqrt(sum(fields.ex.^2 .+ fields.ey.^2)*dx*dy))
+    println( poisson!( fields ) )
 
-    open("fields.dat", "w") do f
-        for i in 1:nx+1
-        for j in 1:ny+1
-		write(f, 
-		      string((i-1)*dx), " ", 
-		      string((j-1)*dy), " ",  
-		      string(fields.ex[i,j]), " ", 
-		      string(fields.ey[i,j]), " ",
-		      string(fields.ρ[i,j]), "\n")
-        end
-	write(f,"\n")
-        end
-    end
-
-    return true
+    gnuplot("fields.dat", fields) 
 
     interpol_eb_m6!( particles, fields )
 
@@ -310,8 +295,7 @@ function test_pic2d( ntau )
         end
 
         calcul_rho_m6!( fields, particles )
-        poisson!( fields )
-        println(sqrt(sum(fields.ex.^2 .+ fields.ey.^2)*dx*dy))
+        println( poisson!( fields ) )
 
 
         for n=1:ntau
@@ -392,8 +376,8 @@ function test_pic2d( ntau )
         end
 
         calcul_rho_m6!( fields, particles )
-        poisson!( fields )
-        println(sqrt(sum(fields.ex.^2 .+ fields.ey.^2)*dx*dy))
+
+        @show poisson!( fields )
 
         for n=1:ntau
 
