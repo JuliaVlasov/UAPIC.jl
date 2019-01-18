@@ -16,13 +16,10 @@ WARNING: the ρ array is destroyed
 """
 struct Poisson
 
-    nx :: Int64
-    ny :: Int64
-    kx :: Vector{Float64}
-    ky :: Vector{Float64}
-
-    ρ̃  :: Array{ComplexF64, 2}
-
+    mesh   :: Mesh
+    kx     :: Array{Float64, 2}
+    ky     :: Array{Float64, 2}
+    ρ̃      :: Array{ComplexF64, 2}
     fft_ex :: Array{ComplexF64, 2}
     fft_ey :: Array{ComplexF64, 2}
 
@@ -35,18 +32,32 @@ struct Poisson
         kx0 = 2π / (mesh.xmax - mesh.xmin)
         ky0 = 2π / (mesh.ymax - mesh.ymin)
 
-        kx = zeros(Float64, nx)
-        ky = zeros(Float64, ny)
+        kx = zeros(Float64, (nx÷2+1,ny))
+        ky = zeros(Float64, (nx÷2+1,ny))
 
-        kx .= kx0 .* vcat(0:nx÷2-1,-nx÷2:-1)
-        ky .= ky0 .* vcat(0:ny÷2-1,-ny÷2:-1)
+        for ik=1:nx÷2+1
+           kx1 = (ik-1)*kx0
+           for jk = 1:ny÷2
+              kx[ik,jk] = kx1
+              ky[ik,jk] = (jk-1)*ky0
+           end
+           for jk = ny÷2+1:ny
+              kx[ik,jk] = kx1
+              ky[ik,jk] = (jk-1-ny)*ky0
+           end 
+        end
 
-        ρ̃ = zeros(ComplexF64,(nx,ny))
+        kx[1,1] = 1.0
+        k2  = kx .* kx .+ ky .* ky
+        kx .= kx ./ k2
+        ky .= ky ./ k2
+
+        ρ̃ = zeros(ComplexF64,(nx÷2+1,ny))
 
         fft_ex = similar(ρ̃)
         fft_ey = similar(ρ̃)
 
-        new( nx, ny, kx, ky, ρ̃, fft_ex, fft_ey)
+        new( mesh, kx, ky, ρ̃, fft_ex, fft_ey)
 
     end	    
 
@@ -55,34 +66,23 @@ end
 
 function ( p :: Poisson )( fields :: MeshFields )
 
-    nx, ny = p.nx, p.ny
+    nx, ny = p.mesh.nx, p.mesh.ny
+    dx, dy = p.mesh.dx, p.mesh.dy
 
-    p.ρ̃ .= fields.ρ[1:nx,1:ny]
+    p.ρ̃ .= rfft(fields.ρ[1:nx,1:ny])
 
-    fft!(p.ρ̃)
+    p.fft_ex .= -1im .* p.kx .* p.ρ̃
+    p.fft_ey .= -1im .* p.ky .* p.ρ̃
 
-    for i = 1:nx
-       kx2 = p.kx[i] * p.kx[i]
-       for j = 1:ny
-	  if i == 1 && j == 1
-	      k2 = 1.0
-	  else
-              k2 = kx2 + p.ky[j] * p.ky[j]
-	  end
-          p.fft_ex[i,j] = -1im * p.kx[i]/k2 * p.ρ̃[i,j]
-          p.fft_ey[i,j] = -1im * p.ky[j]/k2 * p.ρ̃[i,j]
-       end 
-    end
-
-    ifft!(p.fft_ex)
-    ifft!(p.fft_ey)
-
-    fields.ex[1:nx,1:ny] .= real(p.fft_ex)
-    fields.ey[1:nx,1:ny] .= real(p.fft_ey)
+    fields.ex[1:nx,1:ny] .= irfft(p.fft_ex, nx)
+    fields.ey[1:nx,1:ny] .= irfft(p.fft_ey, nx)
 
     fields.ex[nx+1,:] .= fields.ex[1,:]
     fields.ex[:,ny+1] .= fields.ex[:,1]
     fields.ey[nx+1,:] .= fields.ey[1,:]
     fields.ey[:,ny+1] .= fields.ey[:,1]
+
+
+    sum(fields.ex[1:nx,1:ny] .^2 .+ fields.ey[1:nx,1:ny].^2)*dx*dy
 
 end
