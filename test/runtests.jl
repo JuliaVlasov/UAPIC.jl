@@ -109,9 +109,7 @@ function test_pic2d( ntau )
     @show dimy 
     @show ntau 
     
-    auxpx = zeros(Float64, nbpart)
-    auxpy = zeros(Float64, nbpart)
-
+    auxpx = zeros(Float64, (2,nbpart))
 
     bx = zeros(Float64, nbpart)
     ds = zeros(Float64, nbpart)
@@ -137,15 +135,15 @@ function test_pic2d( ntau )
     fytemp1 = zeros(ComplexF64, (ntau, 2, nbpart))
     fytemp0 = zeros(ComplexF64, (ntau, 2, nbpart))
 
-    auxpx .= (particles.dx+particles.ix) * dx
-    auxpy .= (particles.dy+particles.iy) * dy
+    auxpx[1,:] .= (particles.dx+particles.ix) * dx
+    auxpx[2,:] .= (particles.dy+particles.iy) * dy
 
-    for istep = 1:2
+    for istep = 1:1
 
         # preparation
         for m = 1:nbpart
 
-            bx[m]   = 1 + 0.5 * sin(auxpx[m]) * sin(auxpy[m])
+            bx[m]   = 1 + 0.5 * sin(auxpx[1,m]) * sin(auxpx[2,m])
             ds[m]   = dt * bx[m]
             pl[1,m] = ds[m]
             ql[1,m] = ds[m]^2 / 2
@@ -158,34 +156,34 @@ function test_pic2d( ntau )
 
             # preparation initial data
 
-            temp[1,1] = particles.vx[m]/bx[m]
-            temp[1,2] = particles.vy[m]/bx[m]
+            vxb = particles.vx[m]/bx[m]
+            vyb = particles.vy[m]/bx[m]
 
             for n = 1:ntau
-                h[n,1] = ep * (sin(tau[n]) * temp[1,1] 
-                             - cos(tau[n]) * temp[1,2])
-                h[n,2] = ep * (sin(tau[n]) * temp[1,2] 
-                             + cos(tau[n]) * temp[1,1])
+                h[n,1] = ep * (sin(tau[n]) * vxb
+                             - cos(tau[n]) * vyb)
+                h[n,2] = ep * (sin(tau[n]) * vyb 
+                             + cos(tau[n]) * vxb)
+                xt[n,1,m] = auxpx[1,m] .+ h[n,1] .- h[1,1]
+                xt[n,2,m] = auxpx[2,m] .+ h[n,2] .- h[1,2]
             end
 
-            xt[:,1,m] .= auxpx[m] .+ h[:,1] .- h[1,1]
-            xt[:,2,m] .= auxpy[m] .+ h[:,2] .- h[1,2]
 
             for n = 1:ntau
 
                 interv=(1+0.5*sin(real(xt[n,1,m]))
                              *sin(real(xt[n,2,m]))-bx[m])/ep
 
-                temp[1,1]=((  cos(tau[n])*particles.vy[m]
-                            - sin(tau[n])*particles.vx[m])
-                            * interv + particles.ex[m])/bx[m]
+                exb =((  cos(tau[n])*particles.vy[m]
+                       - sin(tau[n])*particles.vx[m])
+                       * interv + particles.ex[m])/bx[m]
 
-                temp[1,2]=(( - cos(tau[n])*particles.vx[m]
-                             - sin(tau[n])*particles.vy[m])
-                             * interv + particles.ey[m])/bx[m]
+                eyb =(( - cos(tau[n])*particles.vx[m]
+                        - sin(tau[n])*particles.vy[m])
+                        * interv + particles.ey[m])/bx[m]
 
-                r[n,1] = cos(tau[n])*temp[1,1]-sin(tau[n]) * temp[1,2]
-                r[n,2] = sin(tau[n])*temp[1,1]+cos(tau[n]) * temp[1,2]
+                r[n,1] = cos(tau[n])* exb - sin(tau[n]) * eyb
+                r[n,2] = sin(tau[n])* exb + cos(tau[n]) * eyb
 
             end
 
@@ -370,8 +368,8 @@ function test_pic2d( ntau )
 
         end
 
-        auxpx .= (particles.dx + particles.ix) * dx
-        auxpy .= (particles.dy + particles.iy) * dy
+        auxpx[1,:] .= (particles.dx + particles.ix) * dx
+        auxpx[2,:].= (particles.dy + particles.iy) * dy
 
         calcul_rho_m6!( fields, particles )
 
