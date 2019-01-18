@@ -225,29 +225,34 @@ function test_pic2d( ntau )
 
             for n=1:ntau
 
-                fx[n,1]   = (   cos(tau[n]) * yt[n,1,m] 
+                fxtemp0[n,1,m] = (   cos(tau[n]) * yt[n,1,m] 
                               + sin(tau[n]) * yt[n,2,m])/bx[m]
-                fx[n,2]   = ( - sin(tau[n]) * yt[n,1,m] 
+                fxtemp0[n,2,m] = ( - sin(tau[n]) * yt[n,1,m] 
                               + cos(tau[n]) * yt[n,2,m])/bx[m]
 
-                interv    = (1 + 0.5*sin(real(xt[n,1,m]))*sin(real(xt[n,2,m]))-bx[m])/ep
+                interv = (1 + 0.5*sin(real(xt[n,1,m]))*sin(real(xt[n,2,m]))-bx[m])/ep
 
                 temp[n,1] = Et[1,n,m]+(  cos(tau[n])*yt[n,2,m]
                                        - sin(tau[n])*yt[n,1,m])*interv
                 temp[n,2] = Et[2,n,m]+(- cos(tau[n])*yt[n,1,m]
                                        - sin(tau[n])*yt[n,2,m])*interv
 
-                fy[n,1]   = (cos(tau[n])*temp[n,1]-sin(tau[n])*temp[n,2])/bx[m]
-                fy[n,2]   = (sin(tau[n])*temp[n,1]+cos(tau[n])*temp[n,2])/bx[m]
+                fytemp0[n,1,m] = (cos(tau[n])*temp[n,1]-sin(tau[n])*temp[n,2])/bx[m]
+                fytemp0[n,2,m] = (sin(tau[n])*temp[n,1]+cos(tau[n])*temp[n,2])/bx[m]
 
             end
 
-            fft!(fx,1)
-            fxtemp0[:,:,m] .= fx/ntau
-            fft!(fy,1)
-            fytemp0[:,:,m] .= fy/ntau
+        end
+
+        fft!(fxtemp0,1)
+        fxtemp0 ./= ntau
+        fft!(fytemp0,1)
+        fytemp0 ./= ntau
+
+        for m=1:nbpart
 
             tildex[:,:,m] .= fft(xt[:,:,m],1) 
+
 
             for n=1:ntau
                 temp[n,:] .= (exp.(-1im*ltau[n]*ds[m]/ep) .* tildex[n,:,m]/ntau 
