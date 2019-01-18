@@ -51,6 +51,7 @@ mutable struct MeshFields
 
 end
 
+include("gnuplot.jl")
 include("poisson.jl")
 
 export Particles
