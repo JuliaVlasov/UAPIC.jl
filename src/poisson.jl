@@ -4,14 +4,13 @@ export Poisson
 
 """
 
-   poisson!(ρ, mesh, ex, ey)
+   poisson!( fields )
 
-Solve the equation Δ Φ = - ρ
+Solve the equation Δ Φ = - fields.ρ
 
- ex = ∂ Φ / ∂ x
- ey = ∂ Φ / ∂ y 
+ fields.ex = ∂ Φ / ∂ x
+ fields.ey = ∂ Φ / ∂ y 
 
-WARNING: the ρ array is destroyed
 
 """
 struct Poisson
@@ -82,7 +81,6 @@ function ( p :: Poisson )( fields :: MeshFields )
     fields.ey[nx+1,:] .= fields.ey[1,:]
     fields.ey[:,ny+1] .= fields.ey[:,1]
 
-
-    sum(fields.ex[1:nx,1:ny] .^2 .+ fields.ey[1:nx,1:ny].^2)*dx*dy
+    sum(fields.ex .* fields.ex .+ fields.ey .* fields.ey) * dx * dy
 
 end

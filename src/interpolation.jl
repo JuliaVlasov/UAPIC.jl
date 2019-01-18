@@ -24,11 +24,11 @@ function interpol_eb_m6!( particles :: Particles, fields :: MeshFields )
        jp3 = mod(j+3,ny) + 1
 
        i = i + 1
-       j = i + 1
-    
+       j = j + 1
+
        dpx = particles.dx[k]
        dpy = particles.dy[k]
-    
+
        cm3x = f_m6(3+dpx)
        cp3x = f_m6(3-dpx)
        cm2x = f_m6(2+dpx)
@@ -145,7 +145,7 @@ function interpol_eb_m6!( particles :: Particles, fields :: MeshFields )
                     + cp3x * cp1y * fields.ey[ip3,jp1]   
                     + cp3x * cp2y * fields.ey[ip3,jp2]   
                     + cp3x * cp3y * fields.ey[ip3,jp3] ) 
-    
+
     end
     
 

@@ -32,7 +32,6 @@
 
     poisson!( fields )
 
-
     nx, ny = mesh.nx, mesh.ny
     err_x, err_y = 0., 0.
 

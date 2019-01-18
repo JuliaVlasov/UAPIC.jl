@@ -2,7 +2,8 @@ using Test
 using UAPIC
 using FFTW
 
-include("test_poisson_2d.jl")
+#include("test_poisson.jl")
+#include("test_particles.jl")
 
 """
 UA scheme for 4d VP in Fluid-scaling with b(x)
@@ -53,23 +54,24 @@ end
 
 function test_pic2d( ntau )
 
-    nstepmax = 20000	
-    kx       = 0.50
-    ky       = 1.0
-    dimx     = 2π/kx
-    dimy     = 2π/ky 
-    nx       = 128	
-    ny       = 128 
-    tfinal   = 1.0 
+    @show nstepmax = 20000	
+    @show kx       = 0.50
+    @show ky       = 1.0
+    @show dimx     = 2π/kx
+    @show dimy     = 2π/ky 
+    @show nx       = 128	
+    @show ny       = 64 
+    @show tfinal   = 1.0 
 
     time = 0.
     ep   = 0.1
     dtau = 2π / ntau
     
-    m    = ntau÷2
-    ltau = vcat(0:m-1, -m:-1)
+    ltau  = zeros(Float64, ntau)
+    ltau .= vcat(0:ntau÷2-1, -ntau÷2:-1) 
     
-    tau  = [ i*dtau for i=0:ntau-1 ]
+    tau   = zeros(Float64, ntau)
+    tau  .= [ i*dtau for i=0:ntau-1 ]
     
     xmin, xmax = 0.0, dimx
     ymin, ymax = 0.0, dimy
@@ -85,41 +87,27 @@ function test_pic2d( ntau )
 
     fields = MeshFields( mesh )
     
-    nbpart = 2048
+    particles = read_particles( "particles.dat", mesh )
 
-    particles = plasma( mesh, nbpart )
-
+    nbpart = particles.nbpart
 
     poisson! = Poisson(mesh)
 
     calcul_rho_m6!( fields, particles )
 
-    println("∑ |rho| = ", sum(abs.(fields.ρ))*dx*dy)
-
-    x = range(0, stop=dimx, length=nx+1) |> collect
-    y = range(0, stop=dimy, length=ny+1) |> collect
-
-    fields.ρ .= (1 .+ 0.05 * cos.(0.5 * x )) .+ sin.(y')
-
-    println( poisson!( fields ) )
+    @show nrj =  poisson!( fields )
 
     gnuplot("fields.dat", fields) 
 
     interpol_eb_m6!( particles, fields )
 
-    println(" mesh fields     : ", sum(view(fields.ex,1:nx,1:ny))*mesh.dx*mesh.dy, 
-                             "\t", sum(view(fields.ey,1:nx,1:ny))*mesh.dx*mesh.dy)
-    println(" particle fields : ", sum(particles.ex) , 
-                             "\t", sum(particles.ey) )
-
-    println(" ep   = $ep    ")
-    println(" dt   = $dt    ")
-    println(" dx   = $dx    ")
-    println(" dy   = $dy    ")
-    println(" dimx = $dimx  ")
-    println(" dimy = $dimy  ")
-    println(" npp  = $nbpart")
-    println(" ntau = $ntau  ")
+    @show ep   
+    @show dt   
+    @show dx   
+    @show dy   
+    @show dimx 
+    @show dimy 
+    @show ntau 
     
     auxpx = zeros(Float64, nbpart)
     auxpy = zeros(Float64, nbpart)
@@ -135,7 +123,7 @@ function test_pic2d( ntau )
     tildex = zeros(ComplexF64, (2, ntau, nbpart))
     tildey = zeros(ComplexF64, (2, ntau, nbpart))
 
-    Et = zeros(ComplexF64, (2, ntau, nbpart))
+    Et = zeros(Float64, (2, ntau, nbpart))
 
     tilde = zeros(ComplexF64, (2, ntau))
     temp  = zeros(ComplexF64, (2, ntau))
@@ -151,7 +139,7 @@ function test_pic2d( ntau )
     fytemp1 = zeros(ComplexF64, (2, ntau, nbpart))
     fytemp0 = zeros(ComplexF64, (2, ntau, nbpart))
 
-    for istep = 1:nstep
+    for istep = 1:1
 
         # preparation
         for m = 1:nbpart
@@ -208,27 +196,33 @@ function test_pic2d( ntau )
 
             tilde[:,1] .= 0.0
 
-            r[1,:] .= ifft(tilde[1,:])
-            r[2,:] .= ifft(tilde[2,:])
+            r[1,:] .= bfft(tilde[1,:])
+            r[2,:] .= bfft(tilde[2,:])
 
             yt[1,:,m] .= particles.vx[m] .+ (r[1,:] .- r[1,1]) * ep
             yt[2,:,m] .= particles.vy[m] .+ (r[2,:] .- r[2,1]) * ep
 
         end
+        @show sum(yt)
+
 
         for n=1:ntau
             for m=1:nbpart
-                xxt1, xxt2 = real(xt[1,n,m]), real(xt[2,n,m])
+                xxt1, xxt2 = real(xt[1:2,n,m])
                 @apply_bc()
                 particles.ix[m] = trunc(Int32, xxt1/dimx*nx)
-                particles.dx[m] = xxt1/dx - particles.ix[m]
+                particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
                 particles.iy[m] = trunc(Int32, xxt2/dimy*ny)
-                particles.dy[m] = xxt2/dy - particles.iy[m]
+                particles.dy[m] = Float32(xxt2/dy - particles.iy[m])
             end
             interpol_eb_m6!( particles, fields )
             Et[1,n,:] .= particles.ex
             Et[2,n,:] .= particles.ey
         end
+        @show sum(particles.ix .+ particles.dx)
+        @show sum(particles.iy .+ particles.dy)
+        @show sum(Et)
+        @show sum(Et)
 
         #  !--time iteration
         #  prediction--
@@ -254,13 +248,13 @@ function test_pic2d( ntau )
 
             fxtemp0[:,:,m] .= tilde/ntau
 
-            tilde[1,:] .= fy[1,:]
-            tilde[2,:] .= fy[2,:]
+            tilde[1,:] .= fft(fy[1,:])
+            tilde[2,:] .= fft(fy[2,:])
 
             fytemp0[:,:,m] .= tilde/ntau
 
-            tildex[1,:,m] .= xt[1,:,m] 
-            tildex[2,:,m] .= xt[2,:,m] 
+            tildex[1,:,m] .= fft(xt[1,:,m]) 
+            tildex[2,:,m] .= fft(xt[2,:,m])
 
             for n=1:ntau
                 temp[:,n] = (exp.(-1im*ltau[n]*ds[m]/ep) .* tildex[:,n,m]/ntau 
@@ -268,21 +262,22 @@ function test_pic2d( ntau )
                              .* fxtemp0[:,n,m])
             end
 
-            xt[1,:,m] = ifft(temp[1,:])
-            xt[2,:,m] = ifft(temp[2,:])
+            xt[1,:,m] .= bfft(temp[1,:])
+            xt[2,:,m] .= bfft(temp[2,:])
 
-            tildey[1,:,m] = fft(yt[1,:,m]) 
-            tildey[2,:,m] = fft(yt[2,:,m]) 
+            tildey[1,:,m] .= fft(yt[1,:,m]) 
+            tildey[2,:,m] .= fft(yt[2,:,m]) 
 
             for n=1:ntau
-                temp[:,n] = (exp(-1im*ltau[n]*ds[m]/ep) .* tildey[:,n,m]/ntau 
+                temp[:,n] .= (exp(-1im*ltau[n]*ds[m]/ep) .* tildey[:,n,m]/ntau 
                              .+ pl[n,m]*fytemp0[:,n,m])
             end
 
-            yt[1,:,m] = ifft(temp[1,:]) 
-            yt[2,:,m] = ifft(temp[2,:]) 
+            yt[1,:,m] .= bfft(temp[1,:]) 
+            yt[2,:,m] .= bfft(temp[2,:]) 
 
         end
+        @show sum(yt)
 
         for m = 1:nbpart
             time = ds[m]
@@ -295,8 +290,7 @@ function test_pic2d( ntau )
         end
 
         calcul_rho_m6!( fields, particles )
-        println( poisson!( fields ) )
-
+        @show nrj = poisson!( fields ) 
 
         for n=1:ntau
             for m=1:nbpart
@@ -314,6 +308,8 @@ function test_pic2d( ntau )
             Et[2,n,:]=particles.ey
 
         end
+
+        @show sum(Et)
 
         # correction
         for m=1:nbpart
@@ -349,8 +345,8 @@ function test_pic2d( ntau )
                                 (fxtemp1[:,n,m] .- fxtemp0[:,n,m]) / ds[m] )
             end
 
-            xt[1,:,m] .= ifft(temp[1,:])
-            xt[2,:,m] .= ifft(temp[2,:])
+            xt[1,:,m] .= bfft(temp[1,:])
+            xt[2,:,m] .= bfft(temp[2,:])
 
             for n=1:ntau
                 temp[:,n] = ( exp(-1im*ltau[n]*ds[m]/ep)*tildey[:,n,m]/ntau 
@@ -358,10 +354,12 @@ function test_pic2d( ntau )
                              .+ ql[n,m]*(fytemp1[:,n,m]-fytemp0[:,n,m])/ds[m])
             end
 
-            yt[1,:,m] .= ifft(temp[1,:]) 
-            yt[2,:,m] .= ifft(temp[2,:]) 
+            yt[1,:,m] .= bfft(temp[1,:]) 
+            yt[2,:,m] .= bfft(temp[2,:]) 
 
         end
+
+        @show sum(yt)
 
         for m=1:nbpart
 
@@ -375,9 +373,12 @@ function test_pic2d( ntau )
 
         end
 
+        auxpx .= (particles.dx + particles.ix) * dx
+        auxpy .= (particles.dy + particles.iy) * dy
+
         calcul_rho_m6!( fields, particles )
 
-        @show poisson!( fields )
+        @show nrj = poisson!( fields )
 
         for n=1:ntau
 
@@ -397,6 +398,8 @@ function test_pic2d( ntau )
 
         end
 
+        @show sum(Et)
+
         for m=1:nbpart
 
             tilde[1,:] .= fft(yt[1,:,m]) 
@@ -412,6 +415,9 @@ function test_pic2d( ntau )
             particles.vy[m] = real(cos(ds[m]/ep)*temp[2,1]-sin(ds[m]/ep)*temp[1,1])
 
         end
+
+        @show sum(particles.vx), sum(particles.vy)
+
     end
 
 
