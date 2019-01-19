@@ -18,12 +18,14 @@ function read_particles( filename, mesh :: Mesh )
 
         for (k,line) in enumerate(eachline(f))
             str_values = split(line)
-            particles.ix[k] = parse(Int32,   str_values[1])
-            particles.iy[k] = parse(Int32,   str_values[2])
-            particles.dx[k] = parse(Float32, str_values[3])
-            particles.dy[k] = parse(Float32, str_values[4])
+            ix = parse(Int32,   str_values[1])
+            iy = parse(Int32,   str_values[2])
+            dpx = parse(Float64, str_values[3])
+            dpy = parse(Float64, str_values[4])
             particles.vx[k] = parse(Float64, str_values[5])
             particles.vy[k] = parse(Float64, str_values[6])
+            particles.px[k] = (dpx+ix) * dx
+            particles.py[k] = (dpy+iy) * dy
         end
 
     end

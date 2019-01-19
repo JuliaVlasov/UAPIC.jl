@@ -5,24 +5,20 @@ mutable struct Particles
 
     nbpart :: Int64
 
-    dx :: Vector{Float32}
-    dy :: Vector{Float32}
-    ix :: Vector{Int32}
-    iy :: Vector{Int32}
+    px :: Vector{Float64}
+    py :: Vector{Float64}
     vx :: Vector{Float64}
     vy :: Vector{Float64}
     ex :: Vector{Float64}
     ey :: Vector{Float64}
     bx :: Vector{Float64}
     t  :: Vector{Float64}
-    p  :: Float64
+    w  :: Float64
 
-    function Particles( nbpart :: Int64, p :: Float64 )
+    function Particles( nbpart :: Int64, w :: Float64 )
 
-        dx = zeros(Float32, nbpart)
-        dy = zeros(Float32, nbpart)
-        ix = zeros(Int32,   nbpart)
-        iy = zeros(Int32,   nbpart)
+        px = zeros(Float64, nbpart)
+        py = zeros(Float64, nbpart)
         vx = zeros(Float64, nbpart)
         vy = zeros(Float64, nbpart)
         ex = zeros(Float64, nbpart)
@@ -30,7 +26,7 @@ mutable struct Particles
         bx = zeros(Float64, nbpart)
         t  = zeros(Float64, nbpart)
 
-        new( nbpart, dx, dy, ix, iy, vx, vy, ex, ey, bx, t , p )
+        new( nbpart, px, py, vx, vy, ex, ey, bx, t , w )
 
     end
 

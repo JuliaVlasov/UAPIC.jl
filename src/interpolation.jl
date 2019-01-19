@@ -5,10 +5,21 @@ function interpol_eb_m6!( particles :: Particles, fields :: MeshFields )
     nx = fields.mesh.nx
     ny = fields.mesh.ny
 
+    dx = fields.mesh.dx
+    dy = fields.mesh.dy
+
+    dimx = fields.mesh.xmax - fields.mesh.xmin
+    dimy = fields.mesh.ymax - fields.mesh.ymin
+
     for k=1:particles.nbpart
     
-       i = particles.ix[k]
-       j = particles.iy[k]
+       px = particles.px[k]
+       py = particles.py[k]
+
+       i   = trunc(Int32, px/dimx*nx)
+       dpx = px/dx - i
+       j   = trunc(Int32, py/dimy*ny)
+       dpy = py/dy - j
     
        im3 = mod(i-3,nx) + 1
        im2 = mod(i-2,nx) + 1
@@ -25,9 +36,6 @@ function interpol_eb_m6!( particles :: Particles, fields :: MeshFields )
 
        i = i + 1
        j = j + 1
-
-       dpx = particles.dx[k]
-       dpy = particles.dy[k]
 
        cm3x = f_m6(3+dpx)
        cp3x = f_m6(3-dpx)

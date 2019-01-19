@@ -51,10 +51,8 @@ function update_particles!( particles :: Particles,
         xxt1 = xmin + mod( xxt1 - xmin, dimx)
         xxt2 = ymin + mod( xxt2 - ymin, dimy)
 
-        particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
-        particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
-        particles.iy[m] = trunc(Int32,   xxt2/dimy*ny)
-        particles.dy[m] = Float32(xxt2/dy - particles.iy[m])
+        particles.px[m] = xxt1
+        particles.py[m] = xxt2
 
     end
 
@@ -154,8 +152,8 @@ function test_pic2d( nτ )
     fy2 = zeros(ComplexF64, (nτ, nbpart))
 
     for m = 1:nbpart
-        auxpx[m] = (particles.dx[m]+particles.ix[m]) * dx
-        auxpy[m] = (particles.dy[m]+particles.iy[m]) * dy
+        auxpx[m] = particles.px[m]
+        auxpy[m] = particles.py[m]
     end
 
     for istep = 1:1
@@ -237,10 +235,8 @@ function test_pic2d( nτ )
                 xxt2 = real(xt2[n,m])
                 xxt1 = xmin + mod( xxt1 - xmin, dimx)
                 xxt2 = ymin + mod( xxt2 - ymin, dimy)
-                particles.ix[m] = trunc(Int32, xxt1/dimx*nx)
-                particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
-                particles.iy[m] = trunc(Int32, xxt2/dimy*ny)
-                particles.dy[m] = Float32(xxt2/dy - particles.iy[m])
+                particles.px[m] = xxt1
+                particles.py[m] = xxt2
             end
 
             interpol_eb_m6!( particles, fields )
@@ -251,8 +247,8 @@ function test_pic2d( nτ )
             end
 
         end
-        @show sum(particles.ix .+ particles.dx)
-        @show sum(particles.iy .+ particles.dy)
+        @show sum(particles.px)
+        @show sum(particles.py)
         @show sum(etx) + sum(ety)
 
         #  !--time iteration
@@ -321,10 +317,8 @@ function test_pic2d( nτ )
                 xxt2 = real(xt2[n,m])
                 xxt1 = xmin + mod( xxt1 - xmin, dimx)
                 xxt2 = ymin + mod( xxt2 - ymin, dimy)
-                particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
-                particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
-                particles.iy[m] = trunc(Int32,   xxt2/dimy*ny)
-                particles.dy[m] = Float32(xxt2/dy - particles.iy[m])
+                particles.px[m] = xxt1
+                particles.py[m] = xxt2
             end
 
             interpol_eb_m6!( particles, fields )
@@ -400,8 +394,8 @@ function test_pic2d( nτ )
         update_particles!( particles, fields, ua, xt1, xt2)
 
         for m = 1:nbpart
-            auxpx[m] = (particles.dx[m]+particles.ix[m]) * dx
-            auxpy[m] = (particles.dy[m]+particles.iy[m]) * dy
+            auxpx[m] = particles.px[m]
+            auxpy[m] = particles.py[m]
         end
 
 
@@ -414,10 +408,8 @@ function test_pic2d( nτ )
                 xxt2 = real(xt2[n,m])
                 xxt1 = xmin + mod( xxt1 - xmin, dimx)
                 xxt2 = ymin + mod( xxt2 - ymin, dimy)
-                particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
-                particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
-                particles.iy[m] = trunc(Int32,   xxt2/dimy*ny)
-                particles.dy[m] = Float32(xxt2/dy - particles.iy[m])
+                particles.px[m] = xxt1
+                particles.py[m] = xxt2
             end
 
             interpol_eb_m6!( particles, fields )

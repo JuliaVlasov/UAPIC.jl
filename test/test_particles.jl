@@ -26,17 +26,15 @@ end
      fields = MeshFields( mesh )
 
      nbpart = 121
-     p      = 1/nbpart
+     w      = 1/nbpart
 
-     particles = Particles( nbpart, p )
+     particles = Particles( nbpart, w )
 
      k = 1
      for i = 5:nx-5, j = 5:ny-5
 
-         particles.ix[k] = Int32(i-1)
-         particles.iy[k] = Int32(j-1)
-         particles.dx[k] = Float32(0.5)
-         particles.dy[k] = Float32(0.5)
+         particles.px[k] = (i-0.5)*dx
+         particles.py[k] = (j-0.5)*dx
 
          k += 1
 
@@ -59,11 +57,8 @@ end
 
      for k = 1:nbpart
          
-         ix = particles.ix[k] 
-         iy = particles.iy[k] 
-
-         xp = (ix + particles.dx[k]) * dx
-         yp = (iy + particles.dy[k]) * dy
+         xp = particles.px[k]
+         yp = particles.py[k]
          ex = particles.ex[k]
          ey = particles.ey[k]
 

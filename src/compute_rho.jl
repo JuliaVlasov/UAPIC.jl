@@ -7,7 +7,7 @@
                |  0                           for q >= 3
 """
 
-function f_m6( q :: Float32 )
+function f_m6( q :: Float64 )
 
 
     if ( q < 1.0 ) 
@@ -20,7 +20,7 @@ function f_m6( q :: Float32 )
 	f_m6 = 0.0
     end
     
-    Float32(f_m6 / 120)
+    f_m6 / 120
 
 end 
 
@@ -32,13 +32,23 @@ function calcul_rho_m6!( fields  :: MeshFields, particles :: Particles)
     nx = fields.mesh.nx
     ny = fields.mesh.ny
 
+    dx = fields.mesh.dx
+    dy = fields.mesh.dy
+
+    dimx = fields.mesh.xmax - fields.mesh.xmin
+    dimy = fields.mesh.ymax - fields.mesh.ymin
+
     for k = 1:particles.nbpart
     
-	i      = particles.ix[k]
-        j      = particles.iy[k]
-        dpx    = particles.dx[k]
-        dpy    = particles.dy[k]
-        weight = particles.p
+        px = particles.px[k]/dx
+        py = particles.py[k]/dy
+
+        i   = trunc(Int32, px)
+        dpx = px - i
+        j   = trunc(Int32, py)
+        dpy = py - j
+
+        weight = particles.w
       
         im3 = mod(i-3,nx)+1
         im2 = mod(i-2,nx)+1
@@ -71,7 +81,7 @@ function calcul_rho_m6!( fields  :: MeshFields, particles :: Particles)
         cp3y = f_m6(3-dpy)
         cm3y = f_m6(3+dpy)
       
-	fields.ρ[im3,jm3] += cm3x * cm3y * weight
+	    fields.ρ[im3,jm3] += cm3x * cm3y * weight
         fields.ρ[im3,jm2] += cm3x * cm2y * weight
         fields.ρ[im3,jm1] += cm3x * cm1y * weight
         fields.ρ[im3,j  ] += cm3x * cy   * weight
@@ -79,7 +89,7 @@ function calcul_rho_m6!( fields  :: MeshFields, particles :: Particles)
         fields.ρ[im3,jp2] += cm3x * cp2y * weight
         fields.ρ[im3,jp3] += cm3x * cp3y * weight
       
-	fields.ρ[im2,jm3] += cm2x * cm3y * weight
+	    fields.ρ[im2,jm3] += cm2x * cm3y * weight
         fields.ρ[im2,jm2] += cm2x * cm2y * weight
         fields.ρ[im2,jm1] += cm2x * cm1y * weight
         fields.ρ[im2,j  ] += cm2x * cy   * weight
@@ -87,7 +97,7 @@ function calcul_rho_m6!( fields  :: MeshFields, particles :: Particles)
         fields.ρ[im2,jp2] += cm2x * cp2y * weight
         fields.ρ[im2,jp3] += cm2x * cp3y * weight
       
-	fields.ρ[im1,jm3] += cm1x * cm3y * weight
+	    fields.ρ[im1,jm3] += cm1x * cm3y * weight
         fields.ρ[im1,jm2] += cm1x * cm2y * weight
         fields.ρ[im1,jm1] += cm1x * cm1y * weight
         fields.ρ[im1,j  ] += cm1x * cy   * weight
@@ -129,13 +139,6 @@ function calcul_rho_m6!( fields  :: MeshFields, particles :: Particles)
 
     end
     
-
-    dimx = fields.mesh.xmax - fields.mesh.xmin
-    dimy = fields.mesh.ymax - fields.mesh.ymin
-
-    dx = fields.mesh.dx
-    dy = fields.mesh.dy
-
     fields.ρ[1:nx,ny+1] .= fields.ρ[1:nx,1]
     fields.ρ[nx+1,1:ny] .= fields.ρ[1,1:ny]
     fields.ρ[nx+1,ny+1]  = fields.ρ[1,1]
