@@ -1,5 +1,7 @@
 module UAPIC
 
+using FFTW
+
 export Mesh
 
 struct Mesh
@@ -50,6 +52,33 @@ mutable struct MeshFields
     end
 
 end
+
+export UA
+
+struct UA
+  
+    ntau :: Int64
+    tau  :: Vector{Float64}
+    ltau :: Vector{Float64}
+    ptau :: FFTW.cFFTWPlan{Complex{Float64},-1,false,1}
+
+    function UA( ntau )
+
+        dtau = 2π / ntau
+        
+        ltau  = zeros(Float64, ntau)
+        ltau .= vcat(0:ntau÷2-1, -ntau÷2:-1) 
+        
+        tau   = zeros(Float64, ntau)
+        tau  .= [ i*dtau for i=0:ntau-1 ]
+
+        ptau  = plan_fft(tau)
+        new( ntau, tau, ltau, ptau )
+
+    end
+
+end
+    
 
 include("integrate.jl")
 include("gnuplot.jl")
