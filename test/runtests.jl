@@ -11,30 +11,6 @@ UA scheme for 4d VP in Fluid-scaling with b(x)
 Update b(x(tn)) every step
 """
 
-macro apply_bc()
-
-    return esc( quote
-
-        while ( xxt1 > xmax )
-            xxt1 = xxt1 - dimx
-        end
-
-        while ( xxt1 < xmin )
-            xxt1 = xxt1 + dimx
-        end
-
-        while ( xxt2 > ymax )
-            xxt2 = xxt2  - dimy
-        end
-
-        while ( xxt2  < ymin )
-            xxt2 = xxt2  + dimy
-        end
-
-    end)
-
-end 
-
 function update_particles!( particles :: Particles, 
                             fields    :: MeshFields, 
                             ua        :: UA, 
@@ -254,7 +230,8 @@ function test_pic2d( nτ )
             for m=1:nbpart
                 xxt1 = real(xt1[n,m])
                 xxt2 = real(xt2[n,m])
-                @apply_bc()
+                xxt1 = xmin + mod( xxt1 - xmin, dimx)
+                xxt2 = ymin + mod( xxt2 - ymin, dimy)
                 particles.ix[m] = trunc(Int32, xxt1/dimx*nx)
                 particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
                 particles.iy[m] = trunc(Int32, xxt2/dimy*ny)
@@ -335,7 +312,8 @@ function test_pic2d( nτ )
             for m=1:nbpart
                 xxt1 = real(xt1[n,m])
                 xxt2 = real(xt2[n,m])
-                @apply_bc()
+                xxt1 = xmin + mod( xxt1 - xmin, dimx)
+                xxt2 = ymin + mod( xxt2 - ymin, dimy)
                 particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
                 particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
                 particles.iy[m] = trunc(Int32,   xxt2/dimy*ny)
@@ -427,7 +405,8 @@ function test_pic2d( nτ )
             tilde .*= exp.(1im*lτ*t/ε)
             xxt2    = real(sum(tilde))
 
-            @apply_bc()
+            xxt1 = xmin + mod( xxt1 - xmin, dimx)
+            xxt2 = ymin + mod( xxt2 - ymin, dimy)
 
             particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
             particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
@@ -449,7 +428,8 @@ function test_pic2d( nτ )
             for m=1:nbpart
                 xxt1 = real(xt1[n,m])
                 xxt2 = real(xt2[n,m])
-                @apply_bc()
+                xxt1 = xmin + mod( xxt1 - xmin, dimx)
+                xxt2 = ymin + mod( xxt2 - ymin, dimy)
                 particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
                 particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
                 particles.iy[m] = trunc(Int32,   xxt2/dimy*ny)
