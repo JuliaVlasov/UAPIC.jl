@@ -1,6 +1,7 @@
 using Test
 using UAPIC
 using FFTW
+using LinearAlgebra
 
 #include("test_poisson.jl")
 #include("test_particles.jl")
@@ -100,23 +101,33 @@ function test_pic2d( ntau )
     pl = zeros(ComplexF64, (ntau, nbpart))
     ql = zeros(ComplexF64, (ntau, nbpart))
 
-    tildex = zeros(ComplexF64, (ntau, 2, nbpart))
-    tildey = zeros(ComplexF64, (ntau, 2, nbpart))
+    x̃t1 = zeros(ComplexF64, (ntau, nbpart))
+    ỹt1 = zeros(ComplexF64, (ntau, nbpart))
+    x̃t2 = zeros(ComplexF64, (ntau, nbpart))
+    ỹt2 = zeros(ComplexF64, (ntau, nbpart))
 
     Et    = zeros(Float64, (nbpart, ntau, 2))
 
-    tilde = zeros(ComplexF64, (ntau, 2))
-    r     = zeros(ComplexF64, (ntau, 2))
-    xt    = zeros(ComplexF64, (ntau, 2, nbpart))
-    yt    = zeros(ComplexF64, (ntau, 2, nbpart))
+    tilde = zeros(ComplexF64, ntau)
+
+    fft_plan = plan_fft(tilde)
+
+    r1    = zeros(ComplexF64, ntau)
+    r2    = zeros(ComplexF64, ntau)
+    xt1   = zeros(ComplexF64, (ntau, nbpart))
+    xt2   = zeros(ComplexF64, (ntau, nbpart))
+    yt1   = zeros(ComplexF64, (ntau, nbpart))
+    yt2   = zeros(ComplexF64, (ntau, nbpart))
 
     fx1 = zeros(ComplexF64, (ntau, 2, nbpart))
     fx0 = zeros(ComplexF64, (ntau, 2, nbpart))
     fy1 = zeros(ComplexF64, (ntau, 2, nbpart))
     fy0 = zeros(ComplexF64, (ntau, 2, nbpart))
 
-    auxpx[1,:] .= (particles.dx+particles.ix) * dx
-    auxpx[2,:] .= (particles.dy+particles.iy) * dy
+    for m = 1:nbpart
+        auxpx[1,m] = (particles.dx[m]+particles.ix[m]) * dx
+        auxpx[2,m] = (particles.dy[m]+particles.iy[m]) * dy
+    end
 
     for istep = 1:1
 
@@ -149,13 +160,13 @@ function test_pic2d( ntau )
                 h1 = ep * (sin(tau[n]) * vxb - cos(tau[n]) * vyb)
                 h2 = ep * (sin(tau[n]) * vyb + cos(tau[n]) * vxb)
 
-                xt1 = auxpx[1,m] + h1 + ep * vyb
-                xt2 = auxpx[2,m] + h2 - ep * vxb
+                xxt1 = auxpx[1,m] + h1 + ep * vyb
+                xxt2 = auxpx[2,m] + h2 - ep * vxb
 
-                xt[n,1,m] = xt1
-                xt[n,2,m] = xt2
+                xt1[n,m] = xxt1
+                xt2[n,m] = xxt2
 
-                interv=(1+0.5*sin(xt1)*sin(xt2)-b)/ep
+                interv=(1+0.5*sin(xxt1)*sin(xxt2)-b)/ep
 
                 exb =((  cos(tau[n])*vy - sin(tau[n])*vx)
                        * interv + ex)/b
@@ -163,37 +174,53 @@ function test_pic2d( ntau )
                 eyb =(( - cos(tau[n])*vx - sin(tau[n])*vy)
                         * interv + ey)/b
 
-                r[n,1] = cos(tau[n])* exb - sin(tau[n]) * eyb
-                r[n,2] = sin(tau[n])* exb + cos(tau[n]) * eyb
+                r1[n] = cos(tau[n])* exb - sin(tau[n]) * eyb
+                r2[n] = sin(tau[n])* exb + cos(tau[n]) * eyb
 
             end
 
-            fft!(r,1)
+            mul!(tilde,fft_plan,r1)
+            tilde[1] = 0.0
             for n = 2:ntau
-                r[n,:] .= -1im * r[n,:]/ltau[n]
+                tilde[n] = -1im * tilde[n]/ltau[n]
             end
-            r[1,:] .= 0.0
-            ifft!(r,1)
+            ldiv!(r1,fft_plan, tilde)
 
-            yt[:,1,m] .= vx .+ (r[:,1] .- r[1,1]) * ep
-            yt[:,2,m] .= vy .+ (r[:,2] .- r[1,2]) * ep
+            mul!(tilde,fft_plan,r2)
+            tilde[1] = 0.0
+            for n = 2:ntau
+                tilde[n] = -1im * tilde[n]/ltau[n]
+            end
+            ldiv!(r2,fft_plan,tilde)
+
+            for n = 1:ntau
+                yt1[n,m] = vx + (r1[n] - r1[1]) * ep
+                yt2[n,m] = vy + (r2[n] - r2[1]) * ep
+            end
 
         end
-        @show sum(yt)
+        @show sum(yt1) + sum(yt2)
 
 
         for n=1:ntau
+
             for m=1:nbpart
-                xxt1, xxt2 = real(xt[n,1:2,m])
+                xxt1 = real(xt1[n,m])
+                xxt2 = real(xt2[n,m])
                 @apply_bc()
                 particles.ix[m] = trunc(Int32, xxt1/dimx*nx)
                 particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
                 particles.iy[m] = trunc(Int32, xxt2/dimy*ny)
                 particles.dy[m] = Float32(xxt2/dy - particles.iy[m])
             end
+
             interpol_eb_m6!( particles, fields )
-            Et[:,n,1] .= particles.ex
-            Et[:,n,2] .= particles.ey
+
+            for m=1:nbpart
+                Et[m,n,1] = particles.ex[m]
+                Et[m,n,2] = particles.ey[m]
+            end
+
         end
         @show sum(particles.ix .+ particles.dx)
         @show sum(particles.iy .+ particles.dy)
@@ -206,17 +233,18 @@ function test_pic2d( ntau )
             b = bx[m]
             for n=1:ntau
 
-                fx0[n,1,m] = (   cos(tau[n]) * yt[n,1,m] 
-                               + sin(tau[n]) * yt[n,2,m])/b
-                fx0[n,2,m] = ( - sin(tau[n]) * yt[n,1,m] 
-                               + cos(tau[n]) * yt[n,2,m])/b
+                fx0[n,1,m] = (   cos(tau[n]) * yt1[n,m] 
+                               + sin(tau[n]) * yt2[n,m])/b
+                fx0[n,2,m] = ( - sin(tau[n]) * yt1[n,m] 
+                               + cos(tau[n]) * yt2[n,m])/b
 
-                interv = (1 + 0.5*sin(real(xt[n,1,m]))*sin(real(xt[n,2,m]))-b)/ep
+                interv = (1 + 0.5*sin(real(xt1[n,m]))*sin(real(xt2[n,m]))-b)/ep
 
-                temp1 = Et[m,n,1]+(  cos(tau[n])*yt[n,2,m]
-                                       - sin(tau[n])*yt[n,1,m])*interv
-                temp2 = Et[m,n,2]+(- cos(tau[n])*yt[n,1,m]
-                                       - sin(tau[n])*yt[n,2,m])*interv
+                temp1 = Et[m,n,1]+(  cos(tau[n])*yt2[n,m]
+                                   - sin(tau[n])*yt1[n,m])*interv
+
+                temp2 = Et[m,n,2]+(- cos(tau[n])*yt1[n,m]
+                                   - sin(tau[n])*yt2[n,m])*interv
 
                 fy0[n,1,m] = (cos(tau[n])*temp1-sin(tau[n])*temp2)/b
                 fy0[n,2,m] = (sin(tau[n])*temp1+cos(tau[n])*temp2)/b
@@ -228,31 +256,43 @@ function test_pic2d( ntau )
         fft!(fx0,1)
         fft!(fy0,1)
 
-        tildex .= fft(xt,1) 
-        tildey .= fft(yt,1) 
+        x̃t1 .= fft(xt1,1) 
+        x̃t2 .= fft(xt2,1) 
+        ỹt1 .= fft(yt1,1) 
+        ỹt2 .= fft(yt2,1) 
 
-        for m=1:nbpart, i=1:2, n=1:ntau
-            xt[n,i,m] = (exp.(-1im*ltau[n]*ds[m]/ep) * tildex[n,i,m]
-                         + pl[n,m] * fx0[n,i,m])
+        for m=1:nbpart, n=1:ntau
+            xt1[n,m] = (exp.(-1im*ltau[n]*ds[m]/ep) * x̃t1[n,m]
+                         + pl[n,m] * fx0[n,1,m])
+            xt2[n,m] = (exp.(-1im*ltau[n]*ds[m]/ep) * x̃t2[n,m]
+                         + pl[n,m] * fx0[n,2,m])
         end
 
-        ifft!(xt,1)
+        ifft!(xt1,1)
+        ifft!(xt2,1)
 
-        for m=1:nbpart, i=1:2, n=1:ntau
-            yt[n,i,m] = (exp(-1im*ltau[n]*ds[m]/ep) * tildey[n,i,m]
-                         + pl[n,m]*fy0[n,i,m])
+        for m=1:nbpart, n=1:ntau
+            yt1[n,m] = (exp(-1im*ltau[n]*ds[m]/ep) * ỹt1[n,m]
+                         + pl[n,m]*fy0[n,1,m])
+            yt2[n,m] = (exp(-1im*ltau[n]*ds[m]/ep) * ỹt2[n,m]
+                         + pl[n,m]*fy0[n,2,m])
         end
 
-        ifft!(yt,1) 
+        ifft!(yt1,1) 
+        ifft!(yt2,1) 
 
-        @show sum(yt)
+        @show sum(yt1) + sum(yt2)
 
         for m = 1:nbpart
             time = ds[m]
-            tilde .= fft(view(xt,:,:,m),1)
+            tilde .= fft(view(xt1,:,m),1)
             tilde ./= ntau 
             tilde .*= exp.(1im*ltau*time/ep)
-            xxt1, xxt2 = real(sum(tilde,dims=1))
+            xxt1 = real(sum(tilde))
+            tilde .= fft(view(xt2,:,m),1)
+            tilde ./= ntau 
+            tilde .*= exp.(1im*ltau*time/ep)
+            xxt2 = real(sum(tilde))
             @apply_bc( )
             particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
             particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
@@ -265,7 +305,8 @@ function test_pic2d( ntau )
 
         for n=1:ntau
             for m=1:nbpart
-                xxt1, xxt2 = real(xt[n,:,m])
+                xxt1 = real(xt1[n,m])
+                xxt2 = real(xt2[n,m])
                 @apply_bc( )
                 particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
                 particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
@@ -275,8 +316,10 @@ function test_pic2d( ntau )
 
             interpol_eb_m6!( particles, fields )
 
-            Et[:,n,1]=particles.ex
-            Et[:,n,2]=particles.ey
+            for m=1:nbpart
+                Et[m,n,1]=particles.ex[m]
+                Et[m,n,2]=particles.ey[m]
+            end
 
         end
 
@@ -285,16 +328,15 @@ function test_pic2d( ntau )
         # correction
         for m=1:nbpart, n=1:ntau
 
-            fx1[n,1,m]=( cos(tau[n])*yt[n,1,m]+sin(tau[n])*yt[n,2,m])/bx[m]
-            fx1[n,2,m]=(-sin(tau[n])*yt[n,1,m]+cos(tau[n])*yt[n,2,m])/bx[m]
+            fx1[n,1,m]=( cos(tau[n])*yt1[n,m]+sin(tau[n])*yt2[n,m])/bx[m]
+            fx1[n,2,m]=(-sin(tau[n])*yt1[n,m]+cos(tau[n])*yt2[n,m])/bx[m]
 
-            interv=(1 + 0.5*sin(real(xt[n,1,m]))*sin(real(xt[n,2,m]))
-                       -bx[m])/ep
+            interv=(1+0.5*sin(real(xt1[n,m]))*sin(real(xt2[n,m]))-bx[m])/ep
 
-            temp1 = Et[m,n,1]+( cos(tau[n])*yt[n,2,m]
-                               -sin(tau[n])*yt[n,1,m])*interv
-            temp2 = Et[m,n,2]+(-cos(tau[n])*yt[n,1,m]
-                               -sin(tau[n])*yt[n,2,m])*interv
+            temp1 = Et[m,n,1]+( cos(tau[n])*yt2[n,m]
+                               -sin(tau[n])*yt1[n,m])*interv
+            temp2 = Et[m,n,2]+(-cos(tau[n])*yt1[n,m]
+                               -sin(tau[n])*yt2[n,m])*interv
 
             fy1[n,1,m] = (cos(tau[n])*temp1-sin(tau[n])*temp2)/bx[m]
             fy1[n,2,m] = (sin(tau[n])*temp1+cos(tau[n])*temp2)/bx[m]
@@ -304,32 +346,46 @@ function test_pic2d( ntau )
         fft!(fx1,1)
         fft!(fy1,1)
 
-        for m=1:nbpart, i=1:2, n=1:ntau
-        @inbounds xt[n,i,m] = ( exp(-1im*ltau[n]*ds[m]/ep)*tildex[n,i,m]
-                      + pl[n,m] * fx0[n,i,m] + ql[n,m] * 
-                      (fx1[n,i,m] - fx0[n,i,m]) / ds[m] )
+        for m=1:nbpart, n=1:ntau
+            xt1[n,m] = ( exp(-1im*ltau[n]*ds[m]/ep)*x̃t1[n,m]
+                      + pl[n,m] * fx0[n,1,m] + ql[n,m] * 
+                      (fx1[n,1,m] - fx0[n,1,m]) / ds[m] )
+            xt2[n,m] = ( exp(-1im*ltau[n]*ds[m]/ep)*x̃t2[n,m]
+                      + pl[n,m] * fx0[n,2,m] + ql[n,m] * 
+                      (fx1[n,2,m] - fx0[n,2,m]) / ds[m] )
         end
 
-        ifft!(xt,1)
+        ifft!(xt1,1)
+        ifft!(xt2,1)
 
-        for m=1:nbpart, i=1:2, n=1:ntau
-        @inbounds yt[n,i,m] = ( exp(-1im*ltau[n]*ds[m]/ep)*tildey[n,i,m]
-                      + pl[n,m]*fy0[n,i,m]
-                      + ql[n,m]*(fy1[n,i,m]-fy0[n,i,m])/ds[m])
+        for m=1:nbpart, n=1:ntau
+            yt1[n,m] = ( exp(-1im*ltau[n]*ds[m]/ep)*ỹt1[n,m]
+                      + pl[n,m]*fy0[n,1,m]
+                      + ql[n,m]*(fy1[n,1,m]-fy0[n,1,m])/ds[m])
+            yt2[n,m] = ( exp(-1im*ltau[n]*ds[m]/ep)*ỹt2[n,m]
+                      + pl[n,m]*fy0[n,2,m]
+                      + ql[n,m]*(fy1[n,2,m]-fy0[n,2,m])/ds[m])
         end
 
-        ifft!(yt,1) 
+        ifft!(yt1,1) 
+        ifft!(yt2,1) 
 
-        @show sum(yt)
+        @show sum(yt1) + sum(yt2)
 
         for m=1:nbpart
 
             time = ds[m]
-            tilde  .= fft(xt[:,:,m],1)
+
+            mul!(tilde, fft_plan, view(xt1,:,m))
             tilde ./= ntau 
             tilde .*= exp.(1im*ltau*time/ep)
+            xxt1    = real(sum(tilde))
 
-            xxt1, xxt2 = real(sum(tilde, dims=1))
+            mul!(tilde, fft_plan, view(xt2,:,m))
+            
+            tilde ./= ntau 
+            tilde .*= exp.(1im*ltau*time/ep)
+            xxt2    = real(sum(tilde))
 
             @apply_bc( )
 
@@ -338,10 +394,11 @@ function test_pic2d( ntau )
             particles.iy[m] = trunc(Int32,   xxt2/dimy*ny)
             particles.dy[m] = Float32(xxt2/dy - particles.iy[m])
 
+            auxpx[1,m] = xxt1
+            auxpx[2,m] = xxt2
+
         end
 
-        auxpx[1,:] .= (particles.dx + particles.ix) * dx
-        auxpx[2,:] .= (particles.dy + particles.iy) * dy
 
         calcul_rho_m6!( fields, particles )
 
@@ -350,7 +407,8 @@ function test_pic2d( ntau )
         for n=1:ntau
 
             for m=1:nbpart
-                xxt1, xxt2 = real(xt[n,1:2,m])
+                xxt1 = real(xt1[n,m])
+                xxt2 = real(xt2[n,m])
                 @apply_bc( )
                 particles.ix[m] = trunc(Int32,   xxt1/dimx*nx)
                 particles.dx[m] = Float32(xxt1/dx - particles.ix[m])
@@ -360,19 +418,22 @@ function test_pic2d( ntau )
 
             interpol_eb_m6!( particles, fields )
 
-            Et[:,n,1] .= particles.ex
-            Et[:,n,2] .= particles.ey
+            for m=1:nbpart
+                Et[m,n,1] = particles.ex[m]
+                Et[m,n,2] = particles.ey[m]
+            end
 
         end
 
         @show sum(Et)
 
-        fft!(yt,1) 
+        fft!(yt1,1) 
+        fft!(yt2,1) 
 
         @simd for m=1:nbpart
 
-            px = sum(view(yt,:,1,m)/ntau .* exp.(1im*ltau*ds[m]/ep))
-            py = sum(view(yt,:,2,m)/ntau .* exp.(1im*ltau*ds[m]/ep))
+            px = sum(view(yt1,:,m)/ntau .* exp.(1im*ltau*ds[m]/ep))
+            py = sum(view(yt2,:,m)/ntau .* exp.(1im*ltau*ds[m]/ep))
 
             particles.vx[m] = real(cos(ds[m]/ep)*px+sin(ds[m]/ep)*py)
             particles.vy[m] = real(cos(ds[m]/ep)*py-sin(ds[m]/ep)*px)
