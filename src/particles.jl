@@ -1,32 +1,38 @@
+export Particle, Particles
 
-export Particles
+struct Particle
+
+    px :: Float64
+    py :: Float64
+    vx :: ComplexF64
+    vy :: ComplexF64
+    ex :: ComplexF64
+    ey :: ComplexF64
+    bx :: Float64
+    t  :: Float64
+
+end
 
 mutable struct Particles
 
     nbpart :: Int64
 
-    px :: Vector{Float64}
-    py :: Vector{Float64}
-    vx :: Vector{Float64}
-    vy :: Vector{Float64}
-    ex :: Vector{Float64}
-    ey :: Vector{Float64}
-    bx :: Vector{Float64}
-    t  :: Vector{Float64}
-    w  :: Float64
+    x :: Array{Float64,2}
+    v :: Array{Float64,2}
+    e :: Array{Float64,2}
+    b :: Vector{Float64}
+    t :: Vector{Float64}
+    w :: Float64
 
     function Particles( nbpart :: Int64, w :: Float64 )
 
-        px = zeros(Float64, nbpart)
-        py = zeros(Float64, nbpart)
-        vx = zeros(Float64, nbpart)
-        vy = zeros(Float64, nbpart)
-        ex = zeros(Float64, nbpart)
-        ey = zeros(Float64, nbpart)
-        bx = zeros(Float64, nbpart)
-        t  = zeros(Float64, nbpart)
+        x = zeros(Float64, (2,nbpart))
+        v = zeros(Float64, (2,nbpart))
+        e = zeros(Float64, (2,nbpart))
+        b = zeros(Float64, nbpart)
+        t = zeros(Float64, nbpart)
 
-        new( nbpart, px, py, vx, vy, ex, ey, bx, t , w )
+        new( nbpart, x, v, e, b, t , w )
 
     end
 

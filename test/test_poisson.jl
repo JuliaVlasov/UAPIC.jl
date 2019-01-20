@@ -14,40 +14,36 @@
     
     fields.ρ  .= - 8 * sin.(2*x) .* cos.(2*y')
 
-    solutions.ex .=   2 * (cos.(2 .* x) .* cos.(2 .* y'))
-    solutions.ey .= - 2 * (sin.(2 .* x) .* sin.(2 .* y'))
+    solutions.e[1,:,:] .=   2 * (cos.(2 .* x) .* cos.(2 .* y'))
+    solutions.e[2,:,:] .= - 2 * (sin.(2 .* x) .* sin.(2 .* y'))
 
     poisson! = Poisson( mesh )
 
     poisson!( fields )
 
-    err_ex, err_ey = errors( fields, solutions )
+    err = errors( fields, solutions )
 
-    println(" errors : $err_ex $err_ey ")
+    println(" error : $err ")
 
-    @test err_ex ≈ 0.0 atol = 1e-14
-    @test err_ey ≈ 0.0 atol = 1e-14
+    @test err ≈ 0.0 atol = 1e-14
 
     fields.ρ .= - 4 * ( sin.(2*x) .+ cos.(2*y') )
 
     poisson!( fields )
 
     nx, ny = mesh.nx, mesh.ny
-    err_x, err_y = 0., 0.
 
     for j in 1:ny+1, i in 1:nx+1
-        solutions.ex[i,j] =   2*cos(2*x[i])
-        solutions.ey[i,j] = - 2*sin(2*y[j])
+        solutions.e[1,i,j] =   2*cos(2*x[i])
+        solutions.e[2,i,j] = - 2*sin(2*y[j])
     end
 
     gnuplot("test2.dat", fields)
     gnuplot("solu2.dat", solutions)
 
-    println(" errors : $err_ex $err_ey ")
-    err_ex, err_ey = errors( fields, solutions )
+    println(" error : $err ")
+    err = errors( fields, solutions )
 
-
-    @test err_ex ≈ 0.0 atol = 1e-14
-    @test err_ey ≈ 0.0 atol = 1e-14
+    @test err ≈ 0.0 atol = 1e-14
 
 end

@@ -33,8 +33,8 @@ end
      k = 1
      for i = 5:nx-5, j = 5:ny-5
 
-         particles.px[k] = (i-0.5)*dx
-         particles.py[k] = (j-0.5)*dx
+         particles.x[1,k] = (i-0.5)*dx
+         particles.x[2,k] = (j-0.5)*dx
 
          k += 1
 
@@ -46,8 +46,8 @@ end
 
      for i = 1:nx+1, j = 1:ny+1
 
-         fields.ex[i,j] = (i-1)*dx
-         fields.ey[i,j] = (j-1)*dy
+         fields.e[1,i,j] = (i-1)*dx
+         fields.e[2,i,j] = (j-1)*dy
 
      end
      
@@ -57,14 +57,13 @@ end
 
      for k = 1:nbpart
          
-         xp = particles.px[k]
-         yp = particles.py[k]
-         ex = particles.ex[k]
-         ey = particles.ey[k]
+         xp = particles.x[1,k]
+         yp = particles.x[2,k]
+         ex = particles.e[1,k]
+         ey = particles.e[2,k]
 
-
-         err_x += abs( particles.ex[k] - xp ) 
-         err_y += abs( particles.ey[k] - yp ) 
+         err_x += abs( particles.e[1,k] - xp ) 
+         err_y += abs( particles.e[2,k] - yp ) 
 
      end
 

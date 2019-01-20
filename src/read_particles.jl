@@ -22,10 +22,10 @@ function read_particles( filename, mesh :: Mesh )
             iy = parse(Int32,   str_values[2])
             dpx = parse(Float64, str_values[3])
             dpy = parse(Float64, str_values[4])
-            particles.vx[k] = parse(Float64, str_values[5])
-            particles.vy[k] = parse(Float64, str_values[6])
-            particles.px[k] = (dpx+ix) * dx
-            particles.py[k] = (dpy+iy) * dy
+            particles.v[1,k] = parse(Float64, str_values[5])
+            particles.v[2,k] = parse(Float64, str_values[6])
+            particles.x[1,k] = (dpx+ix) * dx
+            particles.x[2,k] = (dpy+iy) * dy
         end
 
     end

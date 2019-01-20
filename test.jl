@@ -1,10 +1,12 @@
-using Test
-using UAPIC
 using FFTW
 using LinearAlgebra
 
-include("test_poisson.jl")
-include("test_particles.jl")
+include("src/ua.jl")
+include("src/meshfields.jl")
+include("src/integrate.jl")
+include("src/gnuplot.jl")
+include("src/poisson.jl")
+include("src/particles.jl")
 
 function update_particles!( particles :: Particles, 
                             fields    :: MeshFields, 
@@ -89,7 +91,7 @@ function test_pic2d( nτ )
 
     fields = MeshFields( mesh )
     
-    particles = read_particles( "particles.dat", mesh )
+    particles = read_particles( "test/particles.dat", mesh )
 
     nbpart = particles.nbpart
 

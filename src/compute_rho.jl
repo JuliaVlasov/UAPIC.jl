@@ -40,8 +40,8 @@ function calcul_rho_m6!( fields  :: MeshFields, particles :: Particles)
 
     for k = 1:particles.nbpart
     
-        px = particles.px[k]/dx
-        py = particles.py[k]/dy
+        px = particles.x[1,k]/dx
+        py = particles.x[2,k]/dy
 
         i   = trunc(Int32, px)
         dpx = px - i

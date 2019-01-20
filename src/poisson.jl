@@ -73,14 +73,15 @@ function ( p :: Poisson )( fields :: MeshFields )
     p.fft_ex .= -1im .* p.kx .* p.ρ̃
     p.fft_ey .= -1im .* p.ky .* p.ρ̃
 
-    fields.ex[1:nx,1:ny] .= irfft(p.fft_ex, nx)
-    fields.ey[1:nx,1:ny] .= irfft(p.fft_ey, nx)
+    fields.e[1,1:nx,1:ny] .= irfft(p.fft_ex, nx)
+    fields.e[2,1:nx,1:ny] .= irfft(p.fft_ey, nx)
 
-    fields.ex[nx+1,:] .= fields.ex[1,:]
-    fields.ex[:,ny+1] .= fields.ex[:,1]
-    fields.ey[nx+1,:] .= fields.ey[1,:]
-    fields.ey[:,ny+1] .= fields.ey[:,1]
+    fields.e[1,nx+1,:] .= fields.e[1,1,:]
+    fields.e[1,:,ny+1] .= fields.e[1,:,1]
+    fields.e[2,nx+1,:] .= fields.e[2,1,:]
+    fields.e[2,:,ny+1] .= fields.e[2,:,1]
 
-    sum(fields.ex .* fields.ex .+ fields.ey .* fields.ey) * dx * dy
+    @views sum(  fields.e[1,:,:] .* fields.e[1,:,:] 
+              .+ fields.e[2,:,:] .* fields.e[2,:,:]) * dx * dy
 
 end
