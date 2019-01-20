@@ -61,11 +61,11 @@ function test_pic2d( nτ )
 
     kx       = 0.50
     ky       = 1.0
-    @show dimx     = 2π/kx
-    @show dimy     = 2π/ky 
-    @show nx       = 128	
-    @show ny       = 64 
-    @show tfinal   = 1.0 
+    dimx     = 2π/kx
+    dimy     = 2π/ky 
+    nx       = 128	
+    ny       = 64 
+    tfinal   = 1.0 
 
     t = 0.
     ε = 0.1
@@ -103,12 +103,6 @@ function test_pic2d( nτ )
 
     interpol_eb_m6!( particles, fields )
 
-    @show ε   
-    @show dt   
-    @show dx   
-    @show dy   
-    @show nτ 
-    
     auxpx = zeros(Float64, (2,nbpart))
 
     pl = zeros(ComplexF64, (nτ, nbpart))
@@ -122,11 +116,10 @@ function test_pic2d( nτ )
     etx = zeros(Float64, (nbpart, nτ))
     ety = zeros(Float64, (nbpart, nτ))
 
+    r  = zeros(ComplexF64, (nτ,2))
+    r̃  = zeros(ComplexF64, (nτ,2))
 
-    r1  = zeros(ComplexF64, nτ)
-    r2  = zeros(ComplexF64, nτ)
-    r̃1  = zeros(ComplexF64, nτ)
-    r̃2  = zeros(ComplexF64, nτ)
+    rτ = plan_fft(r,1)
 
     xt1 = zeros(ComplexF64, (nτ, nbpart))
     xt2 = zeros(ComplexF64, (nτ, nbpart))
@@ -194,28 +187,27 @@ function test_pic2d( nτ )
                 exb = ((  cos(τ[n])*vy - sin(τ[n])*vx) * interv + ex)/b
                 eyb = (( -cos(τ[n])*vx - sin(τ[n])*vy) * interv + ey)/b
 
-                r1[n] = cos(τ[n])* exb - sin(τ[n]) * eyb
-                r2[n] = sin(τ[n])* exb + cos(τ[n]) * eyb
+                r[n,1] = cos(τ[n])* exb - sin(τ[n]) * eyb
+                r[n,2] = sin(τ[n])* exb + cos(τ[n]) * eyb
 
             end
 
-            mul!(r̃1,ua.pτ,r1)
-            r̃1[1] = 0.0
+            mul!(r̃,rτ,r)
+
             for n = 2:nτ
-                r̃1[n] = -1im * r̃1[n]/lτ[n]
+                r̃[n,1] = -1im * r̃[n,1]/lτ[n]
             end
-            ldiv!(r1,ua.pτ, r̃1)
-
-            mul!(r̃2,ua.pτ,r2)
-            r̃2[1] = 0.0
             for n = 2:nτ
-                r̃2[n] = -1im * r̃2[n]/lτ[n]
+                r̃[n,2] = -1im * r̃[n,2]/lτ[n]
             end
-            ldiv!(r2,ua.pτ,r̃2)
+
+            ldiv!(r, rτ, r̃)
 
             for n = 1:nτ
-                yt1[n,m] = vx + (r1[n] - r1[1]) * ε
-                yt2[n,m] = vy + (r2[n] - r2[1]) * ε
+                yt1[n,m] = vx + (r[n,1] - r[1,1]) * ε
+            end
+            for n = 1:nτ
+                yt2[n,m] = vy + (r[n,2] - r[1,2]) * ε
             end
 
         end
