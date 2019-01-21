@@ -2,14 +2,10 @@ export Particle, Particles
 
 struct Particle
 
-    px :: Float64
-    py :: Float64
-    vx :: ComplexF64
-    vy :: ComplexF64
-    ex :: ComplexF64
-    ey :: ComplexF64
-    bx :: Float64
-    t  :: Float64
+    x :: Float64
+    v :: ComplexF64
+    e :: ComplexF64
+    b :: Float64
 
 end
 
