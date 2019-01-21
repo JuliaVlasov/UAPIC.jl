@@ -43,6 +43,9 @@ function calcul_rho_m6!( fields  :: MeshFields, particles :: Particles)
         px = particles.x[1,k]/dx
         py = particles.x[2,k]/dy
 
+        px = mod(px, nx)
+        py = mod(py, ny)
+
         i   = trunc(Int32, px)
         dpx = px - i
         j   = trunc(Int32, py)

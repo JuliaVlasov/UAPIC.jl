@@ -13,13 +13,16 @@ function interpol_eb_m6!( particles :: Particles, fields :: MeshFields )
 
     for k=1:particles.nbpart
     
-       px = particles.x[1,k]
-       py = particles.x[2,k]
+       px = particles.x[1,k]/dx
+       py = particles.x[2,k]/dy
 
-       i   = trunc(Int32, px/dimx*nx)
-       dpx = px/dx - i
-       j   = trunc(Int32, py/dimy*ny)
-       dpy = py/dy - j
+       px = mod(px, nx)
+       py = mod(py, ny)
+
+       i   = trunc(Int32, px)
+       dpx = px - i
+       j   = trunc(Int32, py)
+       dpy = py - j
     
        im3 = mod(i-3,nx) + 1
        im2 = mod(i-2,nx) + 1

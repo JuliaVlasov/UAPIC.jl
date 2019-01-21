@@ -32,7 +32,6 @@ function update_particles!( particles :: Particles,
         end 
 
         xxt1 = real(sum(ua.ftau))
-        xxt1 = xmin + mod( xxt1 - xmin, dimx)
 
         mul!(ua.ftau, ua.ptau, view(xt2,:,m))
 
@@ -41,7 +40,6 @@ function update_particles!( particles :: Particles,
         end 
 
         xxt2 = real(sum(ua.ftau))
-        xxt2 = ymin + mod( xxt2 - ymin, dimy)
 
         particles.x[1,m] = xxt1
         particles.x[2,m] = xxt2
@@ -215,8 +213,6 @@ function test_pic2d( ntau )
             for m=1:nbpart
                 xxt1 = real(xt1[n,m])
                 xxt2 = real(xt2[n,m])
-                xxt1 = xmin + mod( xxt1 - xmin, dimx)
-                xxt2 = ymin + mod( xxt2 - ymin, dimy)
                 particles.x[1,m] = xxt1
                 particles.x[2,m] = xxt2
             end
@@ -294,8 +290,6 @@ function test_pic2d( ntau )
             for m=1:nbpart
                 xxt1 = real(xt1[n,m])
                 xxt2 = real(xt2[n,m])
-                xxt1 = xmin + mod( xxt1 - xmin, dimx)
-                xxt2 = ymin + mod( xxt2 - ymin, dimy)
                 particles.x[1,m] = xxt1
                 particles.x[2,m] = xxt2
             end
@@ -382,8 +376,6 @@ function test_pic2d( ntau )
             for m=1:nbpart
                 xxt1 = real(xt1[n,m])
                 xxt2 = real(xt2[n,m])
-                xxt1 = xmin + mod( xxt1 - xmin, dimx)
-                xxt2 = ymin + mod( xxt2 - ymin, dimy)
                 particles.x[1,m] = xxt1
                 particles.x[2,m] = xxt2
             end
