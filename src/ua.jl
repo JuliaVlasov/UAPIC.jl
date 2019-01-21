@@ -4,24 +4,28 @@ export UA
 
 struct UA
   
-    nτ :: Int64
-    ε  :: Float64
-    τ  :: Vector{Float64}
-    lτ :: Vector{Float64}
-    pτ :: FFTW.cFFTWPlan{Complex{Float64},-1,false,1}
+    ntau :: Int64
+    ε    :: Float64
+    tau  :: Vector{Float64}
+    ltau :: Vector{Float64}
+    ftau :: Vector{Float64}
+    ptau :: FFTW.cFFTWPlan{ComplexF64,-1,false,1}
 
-    function UA( nτ, ε )
+    function UA( ntau, ε )
 
-        dτ = 2π / nτ
+        dtau = 2π / ntau
         
-        lτ  = zeros(Float64, nτ)
-        lτ .= vcat(0:nτ÷2-1, -nτ÷2:-1) 
+        ltau  = zeros(Float64, ntau)
+        ltau .= vcat(0:ntau÷2-1, -ntau÷2:-1) 
         
-        τ   = zeros(Float64, nτ)
-        τ  .= [ i*dτ for i=0:nτ-1 ]
+        tau   = zeros(Float64, ntau)
+        tau  .= [ i*dtau for i=0:ntau-1 ]
 
-        pτ  = FFTW.plan_fft(τ)
-        new( nτ, ε, τ, lτ, pτ )
+        ftau  = zeros(ComplexF64, ntau)
+
+        ptau  = FFTW.plan_fft(ftau)
+
+        new( ntau, ε, tau, ltau, ftau, ptau )
 
     end
 
