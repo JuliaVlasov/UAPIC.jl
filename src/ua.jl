@@ -2,13 +2,13 @@ import FFTW
 
 export UA
 
-struct UA
+mutable struct UA
   
     ntau :: Int64
     ε    :: Float64
     tau  :: Vector{Float64}
     ltau :: Vector{Float64}
-    ftau :: Vector{Float64}
+    ftau :: Vector{ComplexF64}
     ptau :: FFTW.cFFTWPlan{ComplexF64,-1,false,1}
 
     function UA( ntau, ε )
