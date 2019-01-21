@@ -21,26 +21,26 @@ function update_particles!( particles :: Particles,
     dimx   = xmax - xmin
     dimy   = ymax - ymin
 
-    tmp = zeros(ComplexF64,(ua.ntau,2))
-
     for m = 1:nbpart
 
         t = particles.t[m]
 
-        tmp[:,1] .= xt1[:,m]
-        tmp[:,2] .= xt2[:,m]
-
-        fft!(tmp,1)
+        mul!(ua.ftau, ua.ptau, view(xt1,:,m))
 
         for n = 1:ntau
-            tmp[n,1] *= exp(1im*ua.ltau[n]*t/ua.ε)/ua.ntau
-        end 
-        for n = 1:ntau
-            tmp[n,2] *= exp(1im*ua.ltau[n]*t/ua.ε)/ua.ntau
+            ua.ftau[n] *= exp(1im*ua.ltau[n]*t/ua.ε)/ua.ntau
         end 
 
-        xxt1, xxt2 = real(sum(tmp, dims=1))
+        xxt1 = real(sum(ua.ftau))
         xxt1 = xmin + mod( xxt1 - xmin, dimx)
+
+        mul!(ua.ftau, ua.ptau, view(xt2,:,m))
+
+        for n = 1:ntau
+            ua.ftau[n] *= exp(1im*ua.ltau[n]*t/ua.ε)/ua.ntau
+        end 
+
+        xxt2 = real(sum(ua.ftau))
         xxt2 = ymin + mod( xxt2 - ymin, dimy)
 
         particles.x[1,m] = xxt1
