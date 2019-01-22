@@ -42,9 +42,6 @@ function test_pic2d( ntau )
 
     poisson! = Poisson(mesh)
 
-
-    auxpx = zeros(Float64, (2,nbpart))
-
     pl = zeros(ComplexF64, (ntau, nbpart))
     ql = zeros(ComplexF64, (ntau, nbpart))
 
@@ -72,11 +69,6 @@ function test_pic2d( ntau )
     g̃x = zeros(ComplexF64, (ntau, 2))
     g̃y = zeros(ComplexF64, (ntau, 2))
 
-    for m = 1:nbpart
-        auxpx[1,m] = particles.x[1,m]
-        auxpx[2,m] = particles.x[2,m]
-    end
-
     calcul_rho_m6!( fields, particles )
 
     nrj =  poisson!( fields )
@@ -88,7 +80,10 @@ function test_pic2d( ntau )
         # preparation
         for m = 1:nbpart
 
-            particles.b[m] = 1 + 0.5 * sin(auxpx[1,m]) * sin(auxpx[2,m])
+            x1 = particles.x[1,m]
+            x2 = particles.x[2,m]
+
+            particles.b[m] = 1 + 0.5 * sin(x1) * sin(x2)
             particles.t[m]  = dt * particles.b[m]
 
             pl[1,m] = particles.t[m]
@@ -116,8 +111,8 @@ function test_pic2d( ntau )
                 h1 = ε * (sin(τ) * vxb - cos(τ) * vyb)
                 h2 = ε * (sin(τ) * vyb + cos(τ) * vxb)
 
-                xt1 = auxpx[1,m] + h1 + ε * vyb
-                xt2 = auxpx[2,m] + h2 - ε * vxb
+                xt1 = x1 + h1 + ε * vyb
+                xt2 = x2 + h2 - ε * vxb
 
                 xt[n,1,m] = xt1
                 xt[n,2,m] = xt2
@@ -257,11 +252,6 @@ function test_pic2d( ntau )
         ldiv!(xt,ftau,x̃t)
 
         update_particles_x!( particles, fields, ua, xt)
-
-        for m = 1:nbpart
-            auxpx[1,m] = particles.x[1,m]
-            auxpx[2,m] = particles.x[2,m]
-        end
 
         nrj = poisson!( fields )
 
