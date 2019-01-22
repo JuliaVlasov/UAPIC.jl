@@ -1,17 +1,18 @@
 export interpol_eb_m6!
 
-function interpol_eb_m6!( e    :: Array{Float64,3}, 
-                          m    :: Mesh, 
-                          x    :: Array{ComplexF64,3},
-                          ntau :: Int64)
+function interpol_eb_m6!( e      :: Array{Float64,3}, 
+                          fields :: MeshFields, 
+                          x      :: Array{ComplexF64,3},
+                          nbpart :: Int64,
+                          ntau   :: Int64)
 
-    nx, ny = m.nx, m.ny
-    dx, dy = m.dx, m.dy
+    nx, ny = fields.mesh.nx, fields.mesh.ny
+    dx, dy = fields.mesh.dx, fields.mesh.dy
 
-    dimx = m.xmax - m.xmin
-    dimy = m.ymax - m.ymin
+    dimx = fields.mesh.xmax - fields.mesh.xmin
+    dimy = fields.mesh.ymax - fields.mesh.ymin
 
-    for k=1:particles.nbpart, n=1:ntau
+    for k=1:nbpart, n=1:ntau
     
        px = real(x[n,1,k])/dx
        py = real(x[n,2,k])/dy
