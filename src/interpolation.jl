@@ -1,5 +1,123 @@
 export interpol_eb_m6!
 
+function interpol_eb_m6!( e    :: Array{Float64,3}, 
+                          m    :: Mesh, 
+                          x    :: Array{ComplexF64,3},
+                          ntau :: Int64)
+
+    nx, ny = m.nx, m.ny
+    dx, dy = m.dx, m.dy
+
+    dimx = m.xmax - m.xmin
+    dimy = m.ymax - m.ymin
+
+    for k=1:particles.nbpart, n=1:ntau
+    
+       px = real(x[n,1,k])/dx
+       py = real(x[n,2,k])/dy
+
+       px = mod(px, nx)
+       py = mod(py, ny)
+
+       i   = trunc(Int32, px)
+       dpx = px - i
+       j   = trunc(Int32, py)
+       dpy = py - j
+    
+       im3 = mod(i-3,nx) + 1
+       im2 = mod(i-2,nx) + 1
+       im1 = mod(i-1,nx) + 1
+       ip1 = mod(i+1,nx) + 1
+       ip2 = mod(i+2,nx) + 1
+       ip3 = mod(i+3,nx) + 1
+       jm3 = mod(j-3,ny) + 1
+       jm2 = mod(j-2,ny) + 1
+       jm1 = mod(j-1,ny) + 1
+       jp1 = mod(j+1,ny) + 1
+       jp2 = mod(j+2,ny) + 1
+       jp3 = mod(j+3,ny) + 1
+
+       i = i + 1
+       j = j + 1
+
+       cm3x = f_m6(3+dpx)
+       cp3x = f_m6(3-dpx)
+       cm2x = f_m6(2+dpx)
+       cp2x = f_m6(2-dpx)
+       cm1x = f_m6(1+dpx)
+       cp1x = f_m6(1-dpx)
+       cx   = f_m6(  dpx)
+       cy   = f_m6(  dpy)
+       cm3y = f_m6(3+dpy)
+       cp3y = f_m6(3-dpy)
+       cm2y = f_m6(2+dpy)
+       cp2y = f_m6(2-dpy)
+       cm1y = f_m6(1+dpy)
+       cp1y = f_m6(1-dpy)
+    
+     
+       for l = 1:2
+
+           s = 0.0
+           s += cm3x * cm3y * fields.e[l,im3,jm3]   
+           s += cm3x * cm2y * fields.e[l,im3,jm2]   
+           s += cm3x * cm1y * fields.e[l,im3,jm1]   
+           s += cm3x * cy   * fields.e[l,im3,j  ]   
+           s += cm3x * cp1y * fields.e[l,im3,jp1]   
+           s += cm3x * cp2y * fields.e[l,im3,jp2]   
+           s += cm3x * cp3y * fields.e[l,im3,jp3]   
+           s += cm2x * cm3y * fields.e[l,im2,jm3]   
+           s += cm2x * cm2y * fields.e[l,im2,jm2]   
+           s += cm2x * cm1y * fields.e[l,im2,jm1]   
+           s += cm2x * cy   * fields.e[l,im2,j  ]   
+           s += cm2x * cp1y * fields.e[l,im2,jp1]   
+           s += cm2x * cp2y * fields.e[l,im2,jp2]   
+           s += cm2x * cp3y * fields.e[l,im2,jp3]   
+           s += cm1x * cm3y * fields.e[l,im1,jm3]   
+           s += cm1x * cm2y * fields.e[l,im1,jm2]   
+           s += cm1x * cm1y * fields.e[l,im1,jm1]   
+           s += cm1x * cy   * fields.e[l,im1,j  ]   
+           s += cm1x * cp1y * fields.e[l,im1,jp1]   
+           s += cm1x * cp2y * fields.e[l,im1,jp2]   
+           s += cm1x * cp3y * fields.e[l,im1,jp3]   
+           s += cx   * cm3y * fields.e[l,i  ,jm3]   
+           s += cx   * cm2y * fields.e[l,i  ,jm2]   
+           s += cx   * cm1y * fields.e[l,i  ,jm1]   
+           s += cx   * cy   * fields.e[l,i  ,j  ]   
+           s += cx   * cp1y * fields.e[l,i  ,jp1]   
+           s += cx   * cp2y * fields.e[l,i  ,jp2]   
+           s += cx   * cp3y * fields.e[l,i  ,jp3]   
+           s += cp1x * cm3y * fields.e[l,ip1,jm3]   
+           s += cp1x * cm2y * fields.e[l,ip1,jm2]   
+           s += cp1x * cm1y * fields.e[l,ip1,jm1]   
+           s += cp1x * cy   * fields.e[l,ip1,j  ]   
+           s += cp1x * cp1y * fields.e[l,ip1,jp1]   
+           s += cp1x * cp2y * fields.e[l,ip1,jp2]   
+           s += cp1x * cp3y * fields.e[l,ip1,jp3]   
+           s += cp2x * cm3y * fields.e[l,ip2,jm3]   
+           s += cp2x * cm2y * fields.e[l,ip2,jm2]   
+           s += cp2x * cm1y * fields.e[l,ip2,jm1]   
+           s += cp2x * cy   * fields.e[l,ip2,j  ]   
+           s += cp2x * cp1y * fields.e[l,ip2,jp1]   
+           s += cp2x * cp2y * fields.e[l,ip2,jp2]   
+           s += cp2x * cp3y * fields.e[l,ip2,jp3]   
+           s += cp3x * cm3y * fields.e[l,ip3,jm3]   
+           s += cp3x * cm2y * fields.e[l,ip3,jm2]   
+           s += cp3x * cm1y * fields.e[l,ip3,jm1]   
+           s += cp3x * cy   * fields.e[l,ip3,j  ]   
+           s += cp3x * cp1y * fields.e[l,ip3,jp1]   
+           s += cp3x * cp2y * fields.e[l,ip3,jp2]   
+           s += cp3x * cp3y * fields.e[l,ip3,jp3]
+
+           e[l,k,n] = s
+    
+       end
+
+    end
+    
+
+end 
+
 function interpol_eb_m6!( particles :: Particles, fields :: MeshFields )
 
     nx = fields.mesh.nx
