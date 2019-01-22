@@ -98,8 +98,6 @@ function test_pic2d( ntau )
                 ql[n,m] = ε * (ε*(1-elt) -1im*ltau[n]*t)/ltau[n]^2
             end
 
-            # preparation initial data
-
             ex,  ey  = particles.e[1:2,m]
             vx,  vy  = particles.v[1:2,m]
             vxb, vyb = vx/b, vy/b
@@ -151,6 +149,9 @@ function test_pic2d( ntau )
             b = particles.b[m]
             for n=1:ntau
 
+                xt1 = real(xt[n,1,m])
+                xt2 = real(xt[n,2,m])
+
                 yt1 = yt[n,1,m] 
                 yt2 = yt[n,2,m] 
 
@@ -159,7 +160,7 @@ function test_pic2d( ntau )
                 fx1[n,m] = ( cos(τ) * yt1 + sin(τ) * yt2)/b
                 fx2[n,m] = (-sin(τ) * yt1 + cos(τ) * yt2)/b
 
-                interv = (1 + 0.5*sin(real(xt[n,1,m]))*sin(real(xt[n,2,m]))-b)/ε
+                interv = (1 + 0.5*sin(xt1)*sin(xt2)-b)/ε
 
                 tmp1 = et[1,m,n]+(  cos(τ)*yt2 - sin(τ)*yt1)*interv
                 tmp2 = et[2,m,n]+(- cos(τ)*yt1 - sin(τ)*yt2)*interv
