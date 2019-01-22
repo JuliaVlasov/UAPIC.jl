@@ -42,13 +42,6 @@ function test_pic2d( ntau )
 
     poisson! = Poisson(mesh)
 
-    calcul_rho_m6!( fields, particles )
-
-    nrj =  poisson!( fields )
-
-    gnuplot("fields.dat", fields) 
-
-    interpol_eb_m6!( particles, fields )
 
     auxpx = zeros(Float64, (2,nbpart))
 
@@ -84,6 +77,12 @@ function test_pic2d( ntau )
         auxpx[2,m] = particles.x[2,m]
     end
 
+    calcul_rho_m6!( fields, particles )
+
+    nrj =  poisson!( fields )
+
+    interpol_eb_m6!( particles, fields )
+
     for istep = 1:2
 
         # preparation
@@ -106,12 +105,9 @@ function test_pic2d( ntau )
 
             # preparation initial data
 
-            ex  = particles.e[1,m]
-            ey  = particles.e[2,m]
-            vx  = particles.v[1,m]
-            vy  = particles.v[2,m]
-            vxb = vx/b
-            vyb = vy/b
+            ex,  ey  = particles.e[1:2,m]
+            vx,  vy  = particles.v[1:2,m]
+            vxb, vyb = vx/b, vy/b
 
             for n = 1:ntau
 
