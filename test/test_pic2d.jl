@@ -123,8 +123,8 @@ function test_pic2d( ntau )
             t = particles.t[m]
             for n=1:ntau
                 elt = exp(-1im*ltau[n]*t/ε) 
-                yt[n,1,m] = elt * ỹt[n,1,m] + ua.pl[n,m]*fy[n,1,m]
-                yt[n,2,m] = elt * ỹt[n,2,m] + ua.pl[n,m]*fy[n,2,m]
+                yt[n,1,m] = elt * ỹt[n,1,m] + ua.pl[n,m] * fy[n,1,m]
+                yt[n,2,m] = elt * ỹt[n,2,m] + ua.pl[n,m] * fy[n,2,m]
             end
         end
 
