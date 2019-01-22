@@ -55,10 +55,10 @@ function test_pic2d( ntau )
     fx = zeros(ComplexF64, (ntau, 2, nbpart))
     fy = zeros(ComplexF64, (ntau, 2, nbpart))
 
-    gx = zeros(ComplexF64, (ntau, 2))
-    gy = zeros(ComplexF64, (ntau, 2))
-    g̃x = zeros(ComplexF64, (ntau, 2))
-    g̃y = zeros(ComplexF64, (ntau, 2))
+    gx = zeros(ComplexF64, (ntau, 2, nbpart))
+    gy = zeros(ComplexF64, (ntau, 2, nbpart))
+    g̃x = zeros(ComplexF64, (ntau, 2, nbpart))
+    g̃y = zeros(ComplexF64, (ntau, 2, nbpart))
 
     calcul_rho_m6!( fields, particles )
 
@@ -149,21 +149,27 @@ function test_pic2d( ntau )
                 yt1 = yt[n,1,m] 
                 yt2 = yt[n,2,m] 
                 
-                gx[n,1]=( cos(τ)*yt1+sin(τ)*yt2)/b
-                gx[n,2]=(-sin(τ)*yt1+cos(τ)*yt2)/b
+                gx[n,1,m]=( cos(τ)*yt1+sin(τ)*yt2)/b
+                gx[n,2,m]=(-sin(τ)*yt1+cos(τ)*yt2)/b
     
                 interv=(1+0.5*sin(real(xt1))*sin(real(xt2))-b)/ε
     
                 tmp1 = et[1,m,n]+( cos(τ)*yt2-sin(τ)*yt1)*interv
                 tmp2 = et[2,m,n]+(-cos(τ)*yt1-sin(τ)*yt2)*interv
     
-                gy[n,1] = (cos(τ)*tmp1-sin(τ)*tmp2)/b
-                gy[n,2] = (sin(τ)*tmp1+cos(τ)*tmp2)/b
+                gy[n,1,m] = (cos(τ)*tmp1-sin(τ)*tmp2)/b
+                gy[n,2,m] = (sin(τ)*tmp1+cos(τ)*tmp2)/b
 
             end
 
-            mul!(g̃x, ua.rtau, gx)
-            mul!(g̃y, ua.rtau, gy)
+        end
+
+        mul!(g̃x, ftau, gx)
+        mul!(g̃y, ftau, gy)
+
+        for m=1:nbpart
+
+            t = particles.t[m]
 
             for n=1:ntau
 
@@ -174,10 +180,10 @@ function test_pic2d( ntau )
                 fy1 = fy[n,1,m]
                 fy2 = fy[n,2,m]
 
-                x̃t[n,1,m] = elt*x̃t[n,1,m] + ua.pl[n,m] * fx1 + ua.ql[n,m] * (g̃x[n,1] - fx1) / t
-                x̃t[n,2,m] = elt*x̃t[n,2,m] + ua.pl[n,m] * fx2 + ua.ql[n,m] * (g̃x[n,2] - fx2) / t
-                ỹt[n,1,m] = elt*ỹt[n,1,m] + ua.pl[n,m] * fy1 + ua.ql[n,m] * (g̃y[n,1] - fy1) / t
-                ỹt[n,2,m] = elt*ỹt[n,2,m] + ua.pl[n,m] * fy2 + ua.ql[n,m] * (g̃y[n,2] - fy2) / t
+                x̃t[n,1,m] = elt*x̃t[n,1,m] + ua.pl[n,m] * fx1 + ua.ql[n,m] * (g̃x[n,1,m] - fx1) / t
+                x̃t[n,2,m] = elt*x̃t[n,2,m] + ua.pl[n,m] * fx2 + ua.ql[n,m] * (g̃x[n,2,m] - fx2) / t
+                ỹt[n,1,m] = elt*ỹt[n,1,m] + ua.pl[n,m] * fy1 + ua.ql[n,m] * (g̃y[n,1,m] - fy1) / t
+                ỹt[n,2,m] = elt*ỹt[n,2,m] + ua.pl[n,m] * fy2 + ua.ql[n,m] * (g̃y[n,2,m] - fy2) / t
 
             end
         end
