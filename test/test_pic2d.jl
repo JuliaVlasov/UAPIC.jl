@@ -15,12 +15,6 @@ function test_pic2d( ntau )
     tfinal   = 1.0 
 
     t = 0.
-    ε = 0.1
-    
-    ua = UA( ntau, ε )
-
-    tau  = view(ua.tau,:)
-    ltau = view(ua.ltau,:)
 
     xmin, xmax = 0.0, dimx
     ymin, ymax = 0.0, dimy
@@ -42,15 +36,14 @@ function test_pic2d( ntau )
 
     poisson! = Poisson(mesh)
 
-    pl = zeros(ComplexF64, (ntau, nbpart))
-    ql = zeros(ComplexF64, (ntau, nbpart))
+    ε = 0.1
+    
+    ua = UA( ntau, ε, nbpart )
+
+    tau  = ua.tau
+    ltau = ua.ltau
 
     et = zeros(Float64, (2, nbpart, ntau))
-
-    r  = zeros(ComplexF64, (ntau,2))
-    r̃  = zeros(ComplexF64, (ntau,2))
-
-    rtau = plan_fft(r,1)
 
     xt  = zeros(ComplexF64, (ntau, 2, nbpart))
     x̃t  = zeros(ComplexF64, (ntau, 2, nbpart))
@@ -59,10 +52,8 @@ function test_pic2d( ntau )
 
     ftau = plan_fft(xt,  1)
 
-    fx1 = zeros(ComplexF64, (ntau, nbpart))
-    fy1 = zeros(ComplexF64, (ntau, nbpart))
-    fx2 = zeros(ComplexF64, (ntau, nbpart))
-    fy2 = zeros(ComplexF64, (ntau, nbpart))
+    fx = zeros(ComplexF64, (ntau, 2, nbpart))
+    fy = zeros(ComplexF64, (ntau, 2, nbpart))
 
     gx = zeros(ComplexF64, (ntau, 2))
     gy = zeros(ComplexF64, (ntau, 2))
@@ -77,69 +68,7 @@ function test_pic2d( ntau )
 
     for istep = 1:2
 
-        # preparation
-        for m = 1:nbpart
-
-            x1 = particles.x[1,m]
-            x2 = particles.x[2,m]
-
-            particles.b[m] = 1 + 0.5 * sin(x1) * sin(x2)
-            particles.t[m]  = dt * particles.b[m]
-
-            pl[1,m] = particles.t[m]
-            ql[1,m] = particles.t[m]^2 / 2
-
-            t = particles.t[m]
-            b = particles.b[m]
-
-            for n=2:ntau
-                elt = exp(-1im*ltau[n]*t/ε) 
-                pl[n,m] = ε * 1im*(elt-1)/ltau[n]
-                ql[n,m] = ε * (ε*(1-elt) -1im*ltau[n]*t)/ltau[n]^2
-            end
-
-            ex,  ey  = particles.e[1:2,m]
-            vx,  vy  = particles.v[1:2,m]
-            vxb, vyb = vx/b, vy/b
-
-            for n = 1:ntau
-
-                τ = tau[n]
-
-                h1 = ε * (sin(τ) * vxb - cos(τ) * vyb)
-                h2 = ε * (sin(τ) * vyb + cos(τ) * vxb)
-
-                xt1 = x1 + h1 + ε * vyb
-                xt2 = x2 + h2 - ε * vxb
-
-                xt[n,1,m] = xt1
-                xt[n,2,m] = xt2
-
-                interv=(1+0.5*sin(xt1)*sin(xt2)-b)/ε
-
-                exb = ((  cos(τ)*vy - sin(τ)*vx) * interv + ex)/b
-                eyb = (( -cos(τ)*vx - sin(τ)*vy) * interv + ey)/b
-
-                r[n,1] = cos(τ)* exb - sin(τ) * eyb
-                r[n,2] = sin(τ)* exb + cos(τ) * eyb
-
-            end
-
-            mul!(r̃,rtau,r)
-
-            for n = 2:ntau
-                r̃[n,1] = -1im * r̃[n,1]/ltau[n]
-                r̃[n,2] = -1im * r̃[n,2]/ltau[n]
-            end
-
-            ldiv!(r, rtau, r̃)
-
-            for n = 1:ntau
-                yt[n,1,m] = vx + (r[n,1] - r[1,1]) * ε
-                yt[n,2,m] = vy + (r[n,2] - r[1,2]) * ε
-            end
-
-        end
+        preparation!( ua, dt, particles, xt, yt) 
 
         update_particles_e!( particles, et, fields, ua, xt)
 
@@ -157,25 +86,23 @@ function test_pic2d( ntau )
 
                 τ = tau[n]
 
-                fx1[n,m] = ( cos(τ) * yt1 + sin(τ) * yt2)/b
-                fx2[n,m] = (-sin(τ) * yt1 + cos(τ) * yt2)/b
+                fx[n,1,m] = ( cos(τ) * yt1 + sin(τ) * yt2)/b
+                fx[n,2,m] = (-sin(τ) * yt1 + cos(τ) * yt2)/b
 
                 interv = (1 + 0.5*sin(xt1)*sin(xt2)-b)/ε
 
                 tmp1 = et[1,m,n]+(  cos(τ)*yt2 - sin(τ)*yt1)*interv
                 tmp2 = et[2,m,n]+(- cos(τ)*yt1 - sin(τ)*yt2)*interv
 
-                fy1[n,m] = (cos(τ)*tmp1-sin(τ)*tmp2)/b
-                fy2[n,m] = (sin(τ)*tmp1+cos(τ)*tmp2)/b
+                fy[n,1,m] = (cos(τ)*tmp1-sin(τ)*tmp2)/b
+                fy[n,2,m] = (sin(τ)*tmp1+cos(τ)*tmp2)/b
 
             end
 
         end
 
-        fft!(fx1,1)
-        fft!(fx2,1)
-        fft!(fy1,1)
-        fft!(fy2,1)
+        fft!(fx,1)
+        fft!(fy,1)
 
         mul!(x̃t, ftau, xt) 
 
@@ -183,8 +110,8 @@ function test_pic2d( ntau )
             t = particles.t[m]
             for n=1:ntau
                 elt = exp(-1im*ltau[n]*t/ε) 
-                xt[n,1,m] = elt * x̃t[n,1,m] + pl[n,m] * fx1[n,m]
-                xt[n,2,m] = elt * x̃t[n,2,m] + pl[n,m] * fx2[n,m]
+                xt[n,1,m] = elt * x̃t[n,1,m] + ua.pl[n,m] * fx[n,1,m]
+                xt[n,2,m] = elt * x̃t[n,2,m] + ua.pl[n,m] * fx[n,2,m]
             end
         end
 
@@ -196,8 +123,8 @@ function test_pic2d( ntau )
             t = particles.t[m]
             for n=1:ntau
                 elt = exp(-1im*ltau[n]*t/ε) 
-                yt[n,1,m] = elt * ỹt[n,1,m] + pl[n,m]*fy1[n,m]
-                yt[n,2,m] = elt * ỹt[n,2,m] + pl[n,m]*fy2[n,m]
+                yt[n,1,m] = elt * ỹt[n,1,m] + ua.pl[n,m]*fy[n,1,m]
+                yt[n,2,m] = elt * ỹt[n,2,m] + ua.pl[n,m]*fy[n,2,m]
             end
         end
 
@@ -235,17 +162,22 @@ function test_pic2d( ntau )
 
             end
 
-            mul!(g̃x, rtau, gx)
-            mul!(g̃y, rtau, gy)
+            mul!(g̃x, ua.rtau, gx)
+            mul!(g̃y, ua.rtau, gy)
 
             for n=1:ntau
 
                 elt = exp(-1im*ltau[n]*t/ε) 
 
-                x̃t[n,1,m] = ( elt*x̃t[n,1,m] + pl[n,m] * fx1[n,m] + ql[n,m] * (g̃x[n,1] - fx1[n,m]) / t )
-                x̃t[n,2,m] = ( elt*x̃t[n,2,m] + pl[n,m] * fx2[n,m] + ql[n,m] * (g̃x[n,2] - fx2[n,m]) / t )
-                ỹt[n,1,m] = ( elt*ỹt[n,1,m] + pl[n,m] * fy1[n,m] + ql[n,m] * (g̃y[n,1] - fy1[n,m]) / t )
-                ỹt[n,2,m] = ( elt*ỹt[n,2,m] + pl[n,m] * fy2[n,m] + ql[n,m] * (g̃y[n,2] - fy2[n,m]) / t )
+                fx1 = fx[n,1,m]
+                fx2 = fx[n,2,m]
+                fy1 = fy[n,1,m]
+                fy2 = fy[n,2,m]
+
+                x̃t[n,1,m] = elt*x̃t[n,1,m] + ua.pl[n,m] * fx1 + ua.ql[n,m] * (g̃x[n,1] - fx1) / t
+                x̃t[n,2,m] = elt*x̃t[n,2,m] + ua.pl[n,m] * fx2 + ua.ql[n,m] * (g̃x[n,2] - fx2) / t
+                ỹt[n,1,m] = elt*ỹt[n,1,m] + ua.pl[n,m] * fy1 + ua.ql[n,m] * (g̃y[n,1] - fy1) / t
+                ỹt[n,2,m] = elt*ỹt[n,2,m] + ua.pl[n,m] * fy2 + ua.ql[n,m] * (g̃y[n,2] - fy2) / t
 
             end
         end
@@ -259,6 +191,7 @@ function test_pic2d( ntau )
         update_particles_e!( particles, et, fields, ua, xt)
 
         for m=1:nbpart
+
             t = particles.t[m]
 
             px = 0.0
