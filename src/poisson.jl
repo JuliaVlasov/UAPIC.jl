@@ -1,5 +1,3 @@
-using FFTW
-
 export Poisson
 
 """
@@ -21,7 +19,6 @@ struct Poisson
     ρ̃      :: Array{ComplexF64, 2}
     fft_ex :: Array{ComplexF64, 2}
     fft_ey :: Array{ComplexF64, 2}
-
 
     function Poisson( mesh :: Mesh )
 
@@ -68,7 +65,7 @@ function ( p :: Poisson )( fields :: MeshFields )
     nx, ny = p.mesh.nx, p.mesh.ny
     dx, dy = p.mesh.dx, p.mesh.dy
 
-    p.ρ̃ .= rfft(fields.ρ[1:nx,1:ny])
+    p.ρ̃ .= rfft(view(fields.ρ,1:nx,1:ny))
 
     p.fft_ex .= -1im .* p.kx .* p.ρ̃
     p.fft_ey .= -1im .* p.ky .* p.ρ̃
@@ -76,10 +73,10 @@ function ( p :: Poisson )( fields :: MeshFields )
     fields.e[1,1:nx,1:ny] .= irfft(p.fft_ex, nx)
     fields.e[2,1:nx,1:ny] .= irfft(p.fft_ey, nx)
 
-    fields.e[1,nx+1,:] .= fields.e[1,1,:]
-    fields.e[1,:,ny+1] .= fields.e[1,:,1]
-    fields.e[2,nx+1,:] .= fields.e[2,1,:]
-    fields.e[2,:,ny+1] .= fields.e[2,:,1]
+    fields.e[1,nx+1,:] .= view(fields.e,1,1,:)
+    fields.e[1,:,ny+1] .= view(fields.e,1,:,1)
+    fields.e[2,nx+1,:] .= view(fields.e,2,1,:)
+    fields.e[2,:,ny+1] .= view(fields.e,2,:,1)
 
     @views sum(  fields.e[1,:,:] .* fields.e[1,:,:] 
               .+ fields.e[2,:,:] .* fields.e[2,:,:]) * dx * dy
