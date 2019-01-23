@@ -57,8 +57,6 @@ function test_pic2d( ntau )
 
     gx = zeros(ComplexF64, (ntau, 2, nbpart))
     gy = zeros(ComplexF64, (ntau, 2, nbpart))
-    g̃x = zeros(ComplexF64, (ntau, 2, nbpart))
-    g̃y = zeros(ComplexF64, (ntau, 2, nbpart))
 
     calcul_rho_m6!( fields, particles )
 
@@ -72,48 +70,11 @@ function test_pic2d( ntau )
 
         update_particles_e!( particles, et, fields, ua, xt)
 
-        #  prediction--
-        for m=1:nbpart
+        #  prediction
 
-            b = particles.b[m]
-            for n=1:ntau
+        compute_f!( fx, fy, ua, particles, xt, yt, et )
 
-                xt1 = real(xt[n,1,m])
-                xt2 = real(xt[n,2,m])
-
-                yt1 = yt[n,1,m] 
-                yt2 = yt[n,2,m] 
-
-                τ = tau[n]
-
-                fx[n,1,m] = ( cos(τ) * yt1 + sin(τ) * yt2)/b
-                fx[n,2,m] = (-sin(τ) * yt1 + cos(τ) * yt2)/b
-
-                interv = (1 + 0.5*sin(xt1)*sin(xt2)-b)/ε
-
-                tmp1 = et[1,m,n]+(  cos(τ)*yt2 - sin(τ)*yt1)*interv
-                tmp2 = et[2,m,n]+(- cos(τ)*yt1 - sin(τ)*yt2)*interv
-
-                fy[n,1,m] = (cos(τ)*tmp1-sin(τ)*tmp2)/b
-                fy[n,2,m] = (sin(τ)*tmp1+cos(τ)*tmp2)/b
-
-            end
-
-        end
-
-        fft!(fx,1)
-        fft!(fy,1)
-
-        mul!(x̃t, ftau, xt) 
-
-        for m=1:nbpart
-            t = particles.t[m]
-            for n=1:ntau
-                elt = exp(-1im*ltau[n]*t/ε) 
-                xt[n,1,m] = elt * x̃t[n,1,m] + ua.pl[n,m] * fx[n,1,m]
-                xt[n,2,m] = elt * x̃t[n,2,m] + ua.pl[n,m] * fx[n,2,m]
-            end
-        end
+        ua_step!( xt, x̃t, ua, ftau, particles, fx )
 
         ifft!(xt,1)
 
@@ -135,37 +96,8 @@ function test_pic2d( ntau )
         update_particles_e!( particles, et, fields, ua, xt)
 
         # correction
-        for m=1:nbpart
 
-            b = particles.b[m]
-            t = particles.t[m]
-
-            for n = 1:ntau
-
-                τ = tau[n]
-
-                xt1 = xt[n,1,m] 
-                xt2 = xt[n,2,m] 
-                yt1 = yt[n,1,m] 
-                yt2 = yt[n,2,m] 
-                
-                gx[n,1,m]=( cos(τ)*yt1+sin(τ)*yt2)/b
-                gx[n,2,m]=(-sin(τ)*yt1+cos(τ)*yt2)/b
-    
-                interv=(1+0.5*sin(real(xt1))*sin(real(xt2))-b)/ε
-    
-                tmp1 = et[1,m,n]+( cos(τ)*yt2-sin(τ)*yt1)*interv
-                tmp2 = et[2,m,n]+(-cos(τ)*yt1-sin(τ)*yt2)*interv
-    
-                gy[n,1,m] = (cos(τ)*tmp1-sin(τ)*tmp2)/b
-                gy[n,2,m] = (sin(τ)*tmp1+cos(τ)*tmp2)/b
-
-            end
-
-        end
-
-        mul!(g̃x, ftau, gx)
-        mul!(g̃y, ftau, gy)
+        compute_f!( gx, gy, ua, particles, xt, yt, et )
 
         for m=1:nbpart
 
@@ -180,10 +112,10 @@ function test_pic2d( ntau )
                 fy1 = fy[n,1,m]
                 fy2 = fy[n,2,m]
 
-                x̃t[n,1,m] = elt*x̃t[n,1,m] + ua.pl[n,m] * fx1 + ua.ql[n,m] * (g̃x[n,1,m] - fx1) / t
-                x̃t[n,2,m] = elt*x̃t[n,2,m] + ua.pl[n,m] * fx2 + ua.ql[n,m] * (g̃x[n,2,m] - fx2) / t
-                ỹt[n,1,m] = elt*ỹt[n,1,m] + ua.pl[n,m] * fy1 + ua.ql[n,m] * (g̃y[n,1,m] - fy1) / t
-                ỹt[n,2,m] = elt*ỹt[n,2,m] + ua.pl[n,m] * fy2 + ua.ql[n,m] * (g̃y[n,2,m] - fy2) / t
+                x̃t[n,1,m] = elt*x̃t[n,1,m] + ua.pl[n,m] * fx1 + ua.ql[n,m] * (gx[n,1,m] - fx1) / t
+                x̃t[n,2,m] = elt*x̃t[n,2,m] + ua.pl[n,m] * fx2 + ua.ql[n,m] * (gx[n,2,m] - fx2) / t
+                ỹt[n,1,m] = elt*ỹt[n,1,m] + ua.pl[n,m] * fy1 + ua.ql[n,m] * (gy[n,1,m] - fy1) / t
+                ỹt[n,2,m] = elt*ỹt[n,2,m] + ua.pl[n,m] * fy2 + ua.ql[n,m] * (gy[n,2,m] - fy2) / t
 
             end
         end

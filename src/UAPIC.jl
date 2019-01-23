@@ -143,24 +143,6 @@ function update_particles_e!( particles :: Particles,
 
     interpol_eb_m6!( et, fields, xt, particles.nbpart, ua.ntau) 
 
-#    for n=1:ua.ntau
-#    
-#        for m=1:particles.nbpart
-#            xt1 = real(xt[n,1,m])
-#            xt2 = real(xt[n,2,m])
-#            #particles.x[1,m] = xt1
-#            #particles.x[2,m] = xt2
-#        end
-#        
-#        #interpol_eb_m6!( particles, fields )
-#        
-#        #for m=1:particles.nbpart
-#        #    et[1,m,n] = particles.e[1,m]
-#        #    et[2,m,n] = particles.e[2,m]
-#        #end
-#    
-#    end
-    
 end
 
 export update_particles_x!
@@ -170,46 +152,75 @@ function update_particles_x!( particles :: Particles,
                               ua        :: UA, 
                               xt        :: Array{ComplexF64,3}) 
 
-    #nbpart = particles.nbpart
-    #nx     = fields.mesh.nx
-    #ny     = fields.mesh.ny
-    #dx     = fields.mesh.dx
-    #dy     = fields.mesh.dy
-    #xmin   = fields.mesh.xmin
-    #xmax   = fields.mesh.xmax 
-    #ymin   = fields.mesh.ymin
-    #ymax   = fields.mesh.ymax
-    #dimx   = xmax - xmin
-    #dimy   = ymax - ymin
-
-    #for m = 1:nbpart
-
-    #    t = particles.t[m]
-
-    #    mul!(ua.ftau, ua.ptau, view(xt,:,1,m))
-
-    #    for n = 1:ua.ntau
-    #        ua.ftau[n] *= exp(1im*ua.ltau[n]*t/ua.ε)/ua.ntau
-    #    end 
-
-    #    xt1 = real(sum(ua.ftau))
-
-    #    mul!(ua.ftau, ua.ptau, view(xt,:,2,m))
-
-    #    for n = 1:ua.ntau
-    #        ua.ftau[n] *= exp(1im*ua.ltau[n]*t/ua.ε)/ua.ntau
-    #    end 
-
-    #    xt2 = real(sum(ua.ftau))
-
-    #    particles.x[1,m] = xt1
-    #    particles.x[2,m] = xt2
-
-    #end
-
-    #calcul_rho_m6!( fields, particles )
     calcul_rho_m6!( fields, particles, xt, ua )
 
 end
+
+export compute_f!
+
+function compute_f!( fx        :: Array{ComplexF64,3}, 
+                     fy        :: Array{ComplexF64,3}, 
+                     ua        :: UA, 
+                     particles :: Particles, 
+                     xt        :: Array{ComplexF64,3}, 
+                     yt        :: Array{ComplexF64,3},
+                     et        :: Array{Float64,3} )
+
+    for m=1:particles.nbpart
+    
+        b = particles.b[m]
+
+        for n=1:ua.ntau
+    
+            xt1 = real(xt[n,1,m])
+            xt2 = real(xt[n,2,m])
+    
+            yt1 = yt[n,1,m] 
+            yt2 = yt[n,2,m] 
+    
+            τ = ua.tau[n]
+    
+            fx[n,1,m] = ( cos(τ) * yt1 + sin(τ) * yt2)/b
+            fx[n,2,m] = (-sin(τ) * yt1 + cos(τ) * yt2)/b
+    
+            interv = (1 + 0.5*sin(xt1)*sin(xt2)-b)/ua.ε
+    
+            tmp1 = et[1,m,n]+(  cos(τ)*yt2 - sin(τ)*yt1)*interv
+            tmp2 = et[2,m,n]+(- cos(τ)*yt1 - sin(τ)*yt2)*interv
+    
+            fy[n,1,m] = (cos(τ)*tmp1-sin(τ)*tmp2)/b
+            fy[n,2,m] = (sin(τ)*tmp1+cos(τ)*tmp2)/b
+    
+        end
+    
+    end
+
+    fft!(fx,1)
+    fft!(fy,1)
+
+end
+
+export ua_step!
+
+function ua_step!( xt        :: Array{ComplexF64, 3}, 
+                   x̃t        :: Array{ComplexF64, 3}, 
+                   ua        :: UA, 
+                   ftau      :: FFTW.cFFTWPlan{ComplexF64,-1,false,3},
+                   particles :: Particles, 
+                   fx        :: Array{ComplexF64, 3} )
+
+    mul!(x̃t, ftau, xt) 
+
+    for m=1:particles.nbpart
+        t = particles.t[m]
+        for n=1:ua.ntau
+            elt = exp(-1im*ua.ltau[n]*t/ua.ε) 
+            xt[n,1,m] = elt * x̃t[n,1,m] + ua.pl[n,m] * fx[n,1,m]
+            xt[n,2,m] = elt * x̃t[n,2,m] + ua.pl[n,m] * fx[n,2,m]
+        end
+    end
+
+end
+
 
 end # module
