@@ -3,8 +3,10 @@ export preparation!
 function preparation!( ua         :: UA, 
                        dt         :: Float64, 
                        particles  :: Particles, 
+                       plan       :: FFTW.cFFTWPlan{ComplexF64,-1,false,3},
                        xt         :: Array{ComplexF64,3}, 
-                       yt         :: Array{ComplexF64,3}) 
+                       yt         :: Array{ComplexF64,3}, 
+                       ỹt         :: Array{ComplexF64,3}) 
 
     ε      = ua.ε
     ntau   = ua.ntau
@@ -17,23 +19,27 @@ function preparation!( ua         :: UA,
         x1 = particles.x[1,m]
         x2 = particles.x[2,m]
 
-        particles.b[m] = 1 + 0.5 * sin(x1) * sin(x2)
-        particles.t[m] = dt * particles.b[m]
+        b = 1 + 0.5 * sin(x1) * sin(x2)
+        t = dt * b
+
+        particles.b[m] = b
+        particles.t[m] = t
 
         ua.pl[1,m] = particles.t[m]
         ua.ql[1,m] = particles.t[m]^2 / 2
 
-        t = particles.t[m]
-        b = particles.b[m]
-
         for n=2:ntau
-            elt = exp(-1im*ua.ltau[n]*t/ε) 
-            ua.pl[n,m] = ε * 1im*(elt-1)/ua.ltau[n]
-            ua.ql[n,m] = ε * (ε*(1-elt) -1im*ua.ltau[n]*t)/ua.ltau[n]^2
+            lτ  = ltau[n]
+            elt = exp(-1im * lτ * t / ε) 
+            ua.pl[n,m] = ε * 1im*(elt-1) / lτ
+            ua.ql[n,m] = ε * (ε*(1-elt) -1im * lτ * t) / lτ^2
         end
 
-        ex,  ey  = particles.e[1:2,m]
-        vx,  vy  = particles.v[1:2,m]
+        ex  = particles.e[1,m]
+        ey  = particles.e[2,m]
+        vx  = particles.v[1,m]
+        vy  = particles.v[2,m]
+
         vxb, vyb = vx/b, vy/b
 
         for n = 1:ntau
@@ -49,30 +55,32 @@ function preparation!( ua         :: UA,
             xt[n,1,m] = xt1
             xt[n,2,m] = xt2
 
-            interv=(1+0.5*sin(xt1)*sin(xt2)-b)/ε
+            interv = (1+0.5*sin(xt1)*sin(xt2)-b)/ε
 
             exb = ((  cos(τ)*vy - sin(τ)*vx) * interv + ex)/b
             eyb = (( -cos(τ)*vx - sin(τ)*vy) * interv + ey)/b
 
-            ua.r[n,1] = cos(τ)* exb - sin(τ) * eyb
-            ua.r[n,2] = sin(τ)* exb + cos(τ) * eyb
+            yt[n,1,m] = cos(τ) * exb - sin(τ) * eyb
+            yt[n,2,m] = sin(τ) * exb + cos(τ) * eyb
 
         end
 
-        mul!(ua.r̃, ua.rtau, ua.r)
+    end
 
-        for n = 2:ntau
-            ua.r̃[n,1] = -1im * ua.r̃[n,1]/ltau[n]
-            ua.r̃[n,2] = -1im * ua.r̃[n,2]/ltau[n]
-        end
+    mul!(ỹt, plan, yt)
 
-        ldiv!(ua.r, ua.rtau, ua.r̃)
+    for m = 1:nbpart, n = 2:ntau
+        ỹt[n,1,m] = -1im * ỹt[n,1,m]/ltau[n]
+        ỹt[n,2,m] = -1im * ỹt[n,2,m]/ltau[n]
+    end
 
-        for n = 1:ntau
-            yt[n,1,m] = vx + (ua.r[n,1] - ua.r[1,1]) * ε
-            yt[n,2,m] = vy + (ua.r[n,2] - ua.r[1,2]) * ε
-        end
+    ldiv!(yt, plan, ỹt)
 
+    for m = 1:nbpart, n = 2:ntau
+        vx  = particles.v[1,m]
+        vy  = particles.v[2,m]
+        yt[n,1,m] = vx + (yt[n,1,m] - yt[1,1,m]) * ε
+        yt[n,2,m] = vy + (yt[n,2,m] - yt[1,2,m]) * ε
     end
 
 end
@@ -129,8 +137,8 @@ function compute_f!( fx        :: Array{ComplexF64,3},
     
             interv = (1 + 0.5*sin(xt1)*sin(xt2)-b)/ua.ε
     
-            tmp1 = et[1,m,n]+(  cos(τ)*yt2 - sin(τ)*yt1)*interv
-            tmp2 = et[2,m,n]+(- cos(τ)*yt1 - sin(τ)*yt2)*interv
+            tmp1 = et[1,n,m]+(  cos(τ)*yt2 - sin(τ)*yt1)*interv
+            tmp2 = et[2,n,m]+(- cos(τ)*yt1 - sin(τ)*yt2)*interv
     
             fy[n,1,m] = (cos(τ)*tmp1-sin(τ)*tmp2)/b
             fy[n,2,m] = (sin(τ)*tmp1+cos(τ)*tmp2)/b
