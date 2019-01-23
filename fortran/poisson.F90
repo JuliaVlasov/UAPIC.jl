@@ -2,6 +2,8 @@ module poisson_m
 
 use, intrinsic :: iso_c_binding 
 
+use mesh_fields_m
+
 implicit none
 
 include 'fftw3.f03'
@@ -31,14 +33,25 @@ contains
         real(8)              :: ky0
         real(8)              :: pi
         real(8), allocatable :: tmp(:,:)
+        integer              :: nx
+        integer              :: ny
+        real(8)              :: kx1
+        real(8)              :: ky1
+        real(8), allocatable :: k2(:,:)
+        integer              :: ik
+        integer              :: jk
 
         pi = 4d0 * atan(1d0)
 
         kx0 = 2d0 * pi / (mesh%xmax - mesh%xmin)
         ky0 = 2d0 * pi / (mesh%ymax - mesh%ymin)
 
-        allocate(self%kx(nx÷2+1,ny))
-        allocate(self%ky(nx÷2+1,ny))
+        nx = mesh%nx
+        ny = mesh%ny
+
+        allocate(self%kx(nx/2+1,ny))
+        allocate(self%ky(nx/2+1,ny))
+        allocate(k2(nx/2+1,ny))
 
         do ik=1,mesh%nx/2+1
            kx1 = (ik-1)*kx0
@@ -71,18 +84,21 @@ contains
 
         type(poisson_t)       :: self
         type(mesh_fields_t)   :: fields
+
         complex(8), parameter :: j = (0d0, 1d0)
+        integer               :: nx
+        integer               :: ny
 
-        nx = fields.mesh.nx
-        ny = fields.mesh.ny
+        nx = fields%mesh%nx
+        ny = fields%mesh%ny
 
-        call dfftw_execute_dft( self.fw, fields.rho(1:nx,1:ny), self.rho )
+        call dfftw_execute_dft( self%fw, fields%rho(1:nx,1:ny), self%rho )
 
         self%ex = -j * self%kx * self%rho
         self%ey = -j * self%ky * self%rho
 
-        call dfftw_execute_dft( self.bw, self%ex, fields%e(1,1:nx,1:ny) )
-        call dfftw_execute_dft( self.fw, self.ey, fields%e(2,1:nx,1:ny) )
+        call dfftw_execute_dft( self%bw, self%ex, fields%e(1,1:nx,1:ny) )
+        call dfftw_execute_dft( self%fw, self%ey, fields%e(2,1:nx,1:ny) )
 
         fields%e(1,nx+1,:) = fields%e(1,1,:)
         fields%e(1,:,ny+1) = fields%e(1,:,1)

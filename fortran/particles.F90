@@ -4,6 +4,7 @@ implicit none
 
 type :: particles_t
 
+   integer              :: nbpart
    real(8), allocatable :: x(:,:)
    real(8), allocatable :: v(:,:)
    real(8), allocatable :: e(:,:)
@@ -30,6 +31,8 @@ subroutine init_particles( self, nbpart, alpha, kx, dimx, dimy )
     real(8)              :: temm
     integer              :: nseed
     integer, allocatable :: seed(:)
+
+    self%nbpart = nbpart
 
     allocate(self%x(2,nbpart))
     allocate(self%v(2,nbpart))

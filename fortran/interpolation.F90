@@ -1,21 +1,66 @@
 module interpolation_m
 
+use compute_rho
 use particles_m
 use mesh_fields_m
 
 implicit none
 
+integer, private :: im3
+integer, private :: im2
+integer, private :: im1
+integer, private :: ip1
+integer, private :: ip2
+integer, private :: ip3
+integer, private :: jm3
+integer, private :: jm2
+integer, private :: jm1
+integer, private :: jp1
+integer, private :: jp2
+integer, private :: jp3
+
+real(8), private :: cm3x
+real(8), private :: cp3x
+real(8), private :: cm2x
+real(8), private :: cp2x
+real(8), private :: cm1x
+real(8), private :: cp1x
+real(8), private :: cx  
+real(8), private :: cy  
+real(8), private :: cm3y
+real(8), private :: cp3y
+real(8), private :: cm2y
+real(8), private :: cp2y
+real(8), private :: cm1y
+real(8), private :: cp1y
+    
+     
 contains
 
-function interpol_eb_m6_complex( e, fields, x, nbpart, ntau )
+subroutine interpolate_eb_m6_complex( e, fields, x, nbpart, ntau )
 
     real(8)             :: e(:,:,:)
     type(mesh_fields_t) :: fields
     complex(8)          :: x(:,:,:)
     integer             :: nbpart
     integer             :: ntau
+
     real(8)             :: dimx
     real(8)             :: dimy
+    integer             :: i
+    integer             :: j
+    integer             :: k
+    integer             :: l
+    integer             :: nx
+    integer             :: ny
+    real(8)             :: dx
+    real(8)             :: dy
+    real(8)             :: px
+    real(8)             :: py
+    real(8)             :: dpx
+    real(8)             :: dpy
+    real(8)             :: s
+    integer             :: n
 
     nx = fields%mesh%nx
     ny = fields%mesh%ny
@@ -33,8 +78,8 @@ function interpol_eb_m6_complex( e, fields, x, nbpart, ntau )
             px = real(x(n,1,k))/dx
             py = real(x(n,2,k))/dy
 
-            px = modulo(px, nx)
-            py = modulo(py, ny)
+            px = modulo(px, real(nx,8))
+            py = modulo(py, real(ny,8))
 
             i   = floor(px)
             dpx = px - i
@@ -76,55 +121,55 @@ function interpol_eb_m6_complex( e, fields, x, nbpart, ntau )
             do l = 1,2
 
                 s = 0.0
-                s = s + cm3x * cm3y * fields.e(l,im3,jm3)   
-                s = s + cm3x * cm2y * fields.e(l,im3,jm2)   
-                s = s + cm3x * cm1y * fields.e(l,im3,jm1)   
-                s = s + cm3x * cy   * fields.e(l,im3,j  )   
-                s = s + cm3x * cp1y * fields.e(l,im3,jp1)   
-                s = s + cm3x * cp2y * fields.e(l,im3,jp2)   
-                s = s + cm3x * cp3y * fields.e(l,im3,jp3)   
-                s = s + cm2x * cm3y * fields.e(l,im2,jm3)   
-                s = s + cm2x * cm2y * fields.e(l,im2,jm2)   
-                s = s + cm2x * cm1y * fields.e(l,im2,jm1)   
-                s = s + cm2x * cy   * fields.e(l,im2,j  )   
-                s = s + cm2x * cp1y * fields.e(l,im2,jp1)   
-                s = s + cm2x * cp2y * fields.e(l,im2,jp2)   
-                s = s + cm2x * cp3y * fields.e(l,im2,jp3)   
-                s = s + cm1x * cm3y * fields.e(l,im1,jm3)   
-                s = s + cm1x * cm2y * fields.e(l,im1,jm2)   
-                s = s + cm1x * cm1y * fields.e(l,im1,jm1)   
-                s = s + cm1x * cy   * fields.e(l,im1,j  )   
-                s = s + cm1x * cp1y * fields.e(l,im1,jp1)   
-                s = s + cm1x * cp2y * fields.e(l,im1,jp2)   
-                s = s + cm1x * cp3y * fields.e(l,im1,jp3)   
-                s = s + cx   * cm3y * fields.e(l,i  ,jm3)   
-                s = s + cx   * cm2y * fields.e(l,i  ,jm2)   
-                s = s + cx   * cm1y * fields.e(l,i  ,jm1)   
-                s = s + cx   * cy   * fields.e(l,i  ,j  )   
-                s = s + cx   * cp1y * fields.e(l,i  ,jp1)   
-                s = s + cx   * cp2y * fields.e(l,i  ,jp2)   
-                s = s + cx   * cp3y * fields.e(l,i  ,jp3)   
-                s = s + cp1x * cm3y * fields.e(l,ip1,jm3)   
-                s = s + cp1x * cm2y * fields.e(l,ip1,jm2)   
-                s = s + cp1x * cm1y * fields.e(l,ip1,jm1)   
-                s = s + cp1x * cy   * fields.e(l,ip1,j  )   
-                s = s + cp1x * cp1y * fields.e(l,ip1,jp1)   
-                s = s + cp1x * cp2y * fields.e(l,ip1,jp2)   
-                s = s + cp1x * cp3y * fields.e(l,ip1,jp3)   
-                s = s + cp2x * cm3y * fields.e(l,ip2,jm3)   
-                s = s + cp2x * cm2y * fields.e(l,ip2,jm2)   
-                s = s + cp2x * cm1y * fields.e(l,ip2,jm1)   
-                s = s + cp2x * cy   * fields.e(l,ip2,j  )   
-                s = s + cp2x * cp1y * fields.e(l,ip2,jp1)   
-                s = s + cp2x * cp2y * fields.e(l,ip2,jp2)   
-                s = s + cp2x * cp3y * fields.e(l,ip2,jp3)   
-                s = s + cp3x * cm3y * fields.e(l,ip3,jm3)   
-                s = s + cp3x * cm2y * fields.e(l,ip3,jm2)   
-                s = s + cp3x * cm1y * fields.e(l,ip3,jm1)   
-                s = s + cp3x * cy   * fields.e(l,ip3,j  )   
-                s = s + cp3x * cp1y * fields.e(l,ip3,jp1)   
-                s = s + cp3x * cp2y * fields.e(l,ip3,jp2)   
-                s = s + cp3x * cp3y * fields.e(l,ip3,jp3)
+                s = s + cm3x * cm3y * fields%e(l,im3,jm3)   
+                s = s + cm3x * cm2y * fields%e(l,im3,jm2)   
+                s = s + cm3x * cm1y * fields%e(l,im3,jm1)   
+                s = s + cm3x * cy   * fields%e(l,im3,j  )   
+                s = s + cm3x * cp1y * fields%e(l,im3,jp1)   
+                s = s + cm3x * cp2y * fields%e(l,im3,jp2)   
+                s = s + cm3x * cp3y * fields%e(l,im3,jp3)   
+                s = s + cm2x * cm3y * fields%e(l,im2,jm3)   
+                s = s + cm2x * cm2y * fields%e(l,im2,jm2)   
+                s = s + cm2x * cm1y * fields%e(l,im2,jm1)   
+                s = s + cm2x * cy   * fields%e(l,im2,j  )   
+                s = s + cm2x * cp1y * fields%e(l,im2,jp1)   
+                s = s + cm2x * cp2y * fields%e(l,im2,jp2)   
+                s = s + cm2x * cp3y * fields%e(l,im2,jp3)   
+                s = s + cm1x * cm3y * fields%e(l,im1,jm3)   
+                s = s + cm1x * cm2y * fields%e(l,im1,jm2)   
+                s = s + cm1x * cm1y * fields%e(l,im1,jm1)   
+                s = s + cm1x * cy   * fields%e(l,im1,j  )   
+                s = s + cm1x * cp1y * fields%e(l,im1,jp1)   
+                s = s + cm1x * cp2y * fields%e(l,im1,jp2)   
+                s = s + cm1x * cp3y * fields%e(l,im1,jp3)   
+                s = s + cx   * cm3y * fields%e(l,i  ,jm3)   
+                s = s + cx   * cm2y * fields%e(l,i  ,jm2)   
+                s = s + cx   * cm1y * fields%e(l,i  ,jm1)   
+                s = s + cx   * cy   * fields%e(l,i  ,j  )   
+                s = s + cx   * cp1y * fields%e(l,i  ,jp1)   
+                s = s + cx   * cp2y * fields%e(l,i  ,jp2)   
+                s = s + cx   * cp3y * fields%e(l,i  ,jp3)   
+                s = s + cp1x * cm3y * fields%e(l,ip1,jm3)   
+                s = s + cp1x * cm2y * fields%e(l,ip1,jm2)   
+                s = s + cp1x * cm1y * fields%e(l,ip1,jm1)   
+                s = s + cp1x * cy   * fields%e(l,ip1,j  )   
+                s = s + cp1x * cp1y * fields%e(l,ip1,jp1)   
+                s = s + cp1x * cp2y * fields%e(l,ip1,jp2)   
+                s = s + cp1x * cp3y * fields%e(l,ip1,jp3)   
+                s = s + cp2x * cm3y * fields%e(l,ip2,jm3)   
+                s = s + cp2x * cm2y * fields%e(l,ip2,jm2)   
+                s = s + cp2x * cm1y * fields%e(l,ip2,jm1)   
+                s = s + cp2x * cy   * fields%e(l,ip2,j  )   
+                s = s + cp2x * cp1y * fields%e(l,ip2,jp1)   
+                s = s + cp2x * cp2y * fields%e(l,ip2,jp2)   
+                s = s + cp2x * cp3y * fields%e(l,ip2,jp3)   
+                s = s + cp3x * cm3y * fields%e(l,ip3,jm3)   
+                s = s + cp3x * cm2y * fields%e(l,ip3,jm2)   
+                s = s + cp3x * cm1y * fields%e(l,ip3,jm1)   
+                s = s + cp3x * cy   * fields%e(l,ip3,j  )   
+                s = s + cp3x * cp1y * fields%e(l,ip3,jp1)   
+                s = s + cp3x * cp2y * fields%e(l,ip3,jp2)   
+                s = s + cp3x * cp3y * fields%e(l,ip3,jp3)
 
                 e(n,l,k) = s
 
@@ -134,12 +179,29 @@ function interpol_eb_m6_complex( e, fields, x, nbpart, ntau )
 
     end do
 
-end subroutine interpol_eb_m6_complex 
+end subroutine interpolate_eb_m6_complex 
 
-subroutine interpol_eb_m6_real( particles, fields )
+subroutine interpolate_eb_m6_real( particles, fields )
 
     type(particles_t)   :: particles
     type(mesh_fields_t) :: fields
+
+    integer :: nx
+    integer :: ny
+    real(8) :: dx
+    real(8) :: dy
+    real(8) :: dimx
+    real(8) :: dimy
+    real(8) :: dpx
+    real(8) :: dpy
+    real(8) :: s
+    integer :: i
+    integer :: j
+    integer :: k
+    integer :: l
+    real(8) :: px
+    real(8) :: py
+    real(8) :: e
 
     nx = fields%mesh%nx
     ny = fields%mesh%ny
@@ -155,8 +217,8 @@ subroutine interpol_eb_m6_real( particles, fields )
        px = particles%x(1,k)/dx
        py = particles%x(2,k)/dy
 
-       px = modulo(px, nx)
-       py = modulo(py, ny)
+       px = modulo(px, real(nx,8))
+       py = modulo(py, real(ny,8))
 
        i   = floor(px)
        dpx = px - i
@@ -250,8 +312,10 @@ subroutine interpol_eb_m6_real( particles, fields )
 
            particles%e(l,k) = e
     
-       end
+        end do
 
-    end
+    end do
     
-end subroutine interpol_eb_m6_real
+end subroutine interpolate_eb_m6_real
+
+end module interpolation_m

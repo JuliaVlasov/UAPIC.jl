@@ -4,13 +4,11 @@ program uapic_2d
     use particles_m
     use poisson_m
     use interpolation_m
-    use compute_rho_m
+    use compute_rho
 
     real(8), parameter :: kx       = 0.50
     real(8), parameter :: ky       = 1.0
     real(8), parameter :: pi       = 3.141592654d0
-    real(8), parameter :: dimx     = 2*pi/kx
-    real(8), parameter :: dimy     = 2*pi/ky 
     integer, parameter :: nx       = 128	
     integer, parameter :: ny       = 64 
     real(8), parameter :: tfinal   = 1.0d0 
@@ -39,6 +37,15 @@ program uapic_2d
 
     real(8), allocatable :: et(:,:,:)
 
+    real(8) :: pi 
+    real(8) :: dimx
+    real(8) :: dimy
+
+
+    pi       = 4d0 * atan(1d0)
+    dimx     = 2*pi/kx
+    dimy     = 2*pi/ky 
+
     call init_mesh( mesh, xmin, xmax, nx, ymin, ymax, ny )
 
     dx = mesh%dx
@@ -57,113 +64,123 @@ program uapic_2d
 
     call init_poisson( poisson, mesh )
 
-    ua = UA( ntau, ε, nbpart )
+    call init_ua( ua, ntau, eps, nbpart )
 
     tau  = ua.tau
     ltau = ua.ltau
 
     et  = zeros(Float64, (ntau, 2, nbpart))
 
-    xt  = zeros(ComplexF64, (ntau, 2, nbpart))
-    x̃t  = zeros(ComplexF64, (ntau, 2, nbpart))
-    yt  = zeros(ComplexF64, (ntau, 2, nbpart))
-    ỹt  = zeros(ComplexF64, (ntau, 2, nbpart))
+    allocate(xt(ntau, 2, nbpart))
+    allocate(xf(ntau, 2, nbpart))
+    allocate(yt(ntau, 2, nbpart))
+    allocate(yf(ntau, 2, nbpart))
 
     ftau = plan_fft(xt,  1)
 
-    fx = zeros(ComplexF64, (ntau, 2, nbpart))
-    fy = zeros(ComplexF64, (ntau, 2, nbpart))
+    allocate(fx(ntau, 2, nbpart))
+    allocate(fy(ntau, 2, nbpart))
+    allocate(gx(ntau, 2, nbpart))
+    allocate(gy(ntau, 2, nbpart))
 
-    gx = zeros(ComplexF64, (ntau, 2, nbpart))
-    gy = zeros(ComplexF64, (ntau, 2, nbpart))
+    call calcul_rho_m6( fields, particles )
 
-    calcul_rho_m6!( fields, particles )
+    call poisson( fields )
 
-    nrj =  poisson!( fields )
+    call interpolate_eb_m6_real( particles, fields )
 
-    interpol_eb_m6!( particles, fields )
+    do istep = 1,2
 
-    for istep = 1:2
+        call preparation( ua, dt, particles, xt, yt) 
 
-        preparation!( ua, dt, particles, xt, yt) 
+        call update_particles_e( particles, et, fields, ua, xt)
 
-        update_particles_e!( particles, et, fields, ua, xt)
+        call compute_f( fx, fy, ua, particles, xt, yt, et )
 
-        #  prediction
+        do m = 1, nbpart
+            call dfftw_execute_dft( ua%fw, xt(:,1,m), xf(:,1,m))
+            call dfftw_execute_dft( ua%fw, xt(:,2,m), xf(:,2,m))
+        end do
 
-        compute_f!( fx, fy, ua, particles, xt, yt, et )
+        call ua_step( xt, xf, ua, particles, fx )
 
-        mul!(x̃t, ftau, xt) 
+        do m = 1, nbpart
+            call dfftw_execute_dft( ua%bw, xt(:,1,m), xt(:,1,m))
+            call dfftw_execute_dft( ua%bw, xt(:,2,m), xt(:,2,m))
+        end do
 
-        ua_step!( xt, x̃t, ua, particles, fx )
+        do m = 1, nbpart
+            call dfftw_execute_dft( ua%fw, yt(:,1,m), yf(:,1,m))
+            call dfftw_execute_dft( ua%fw, yt(:,2,m), yf(:,2,m))
+        end do
 
-        ifft!(xt,1)
+        call ua_step( yt, yf, ua, particles, fy )
 
-        mul!(ỹt, ftau, yt) 
+        do m = 1, nbpart
+            call dfftw_execute_dft( ua%bw, yt(:,1,m), yt(:,1,m))
+            call dfftw_execute_dft( ua%bw, yt(:,2,m), yt(:,2,m))
+        end do
 
-        ua_step!( yt, ỹt, ua, particles, fy )
+        call update_particles_x( particles, fields, ua, xt)
 
-        ifft!(yt,1) 
+        call poisson( fields ) 
 
-        update_particles_x!( particles, fields, ua, xt)
+        call update_particles_e( particles, et, fields, ua, xt)
 
-        nrj = poisson!( fields ) 
+        call compute_f( gx, gy, ua, particles, xt, yt, et )
 
-        update_particles_e!( particles, et, fields, ua, xt)
+        call ua_step( xt, xf, ua, particles, fx ) 
 
-        # correction
+        call ua_step( yt, yf, ua, particles, fy )
 
-        compute_f!( gx, gy, ua, particles, xt, yt, et )
+        do m=1,nbpart
 
-        ua_step!( xt, x̃t, ua, particles, fx ) 
+            t = particles%t(m)
 
-        ua_step!( yt, ỹt, ua, particles, fy )
+            do n=1,ntau
 
-        for m=1:nbpart
+                xt(n,1,m) = xt(n,1,m) + ua%ql(n,m) * (gx(n,1,m) - fx(n,1,m)) / t
+                xt(n,2,m) = xt(n,2,m) + ua%ql(n,m) * (gx(n,2,m) - fx(n,2,m)) / t
+                yt(n,1,m) = yt(n,1,m) + ua%ql(n,m) * (gy(n,1,m) - fy(n,1,m)) / t
+                yt(n,2,m) = yt(n,2,m) + ua%ql(n,m) * (gy(n,2,m) - fy(n,2,m)) / t
 
-            t = particles.t[m]
+            end do
 
-            for n=1:ntau
+        end do
 
-                xt[n,1,m] += ua.ql[n,m] * (gx[n,1,m] - fx[n,1,m]) / t
-                xt[n,2,m] += ua.ql[n,m] * (gx[n,2,m] - fx[n,2,m]) / t
-                yt[n,1,m] += ua.ql[n,m] * (gy[n,1,m] - fy[n,1,m]) / t
-                yt[n,2,m] += ua.ql[n,m] * (gy[n,2,m] - fy[n,2,m]) / t
+        do m = 1, nbpart
+            call dfftw_execute_dft( ua%bw, xt(:,1,m), xt(:,1,m))
+            call dfftw_execute_dft( ua%bw, xt(:,2,m), xt(:,2,m))
+        end do
 
-            end
+        call update_particles_x( particles, fields, ua, xt)
 
-        end
+        call nrj = poisson( fields )
 
-        ifft!(xt,1)
+        call update_particles_e( particles, et, fields, ua, xt)
 
-        update_particles_x!( particles, fields, ua, xt)
+        do m=1,nbpart
 
-        nrj = poisson!( fields )
+            t = particles%t(m)
 
-        update_particles_e!( particles, et, fields, ua, xt)
+            px = 0d0
+            py = 0d0
 
-        for m=1:nbpart
+            do n = 1,ntau
+                elt = exp(1im*ltau(n)*t/eps) 
+                px = px + yt(n,1,m)/ntau * elt
+                py = py + yt(n,2,m)/ntau * elt
+            end do
 
-            t = particles.t[m]
+            particles%v(1,m) = real(cos(t/eps)*px+sin(t/eps)*py)
+            particles%v(2,m) = real(cos(t/eps)*py-sin(t/eps)*px)
 
-            px, py = 0.0, 0.0
-            for n = 1:ntau
-                elt = exp(1im*ltau[n]*t/ε) 
-                px += yt[n,1,m]/ntau * elt
-                py += yt[n,2,m]/ntau * elt
-            end
-
-            particles.v[1,m] = real(cos(t/ε)*px+sin(t/ε)*py)
-            particles.v[2,m] = real(cos(t/ε)*py-sin(t/ε)*px)
-
-        end
+        end do
 
 
-    end
+    end do
 
-    @show @views sum(particles.v[1,:]), sum(particles.v[2,:])
-
-    true
+    print*, sum(particles%v(1,:)), sum(particles%v(2,:))
 
 end program uapic_2d
 

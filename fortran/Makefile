@@ -26,4 +26,5 @@ clean:
 .mod.o:
 	$(F90) $(F90FLAGS) -c $*.F90
 
-compute_rho.o: particles.o meshfields.o
+ua_type.o: particles.o meshfields.o
+compute_rho.o: ua_type.o 
