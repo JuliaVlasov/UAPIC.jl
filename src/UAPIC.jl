@@ -205,19 +205,22 @@ export ua_step!
 function ua_step!( xt        :: Array{ComplexF64, 3}, 
                    x̃t        :: Array{ComplexF64, 3}, 
                    ua        :: UA, 
-                   ftau      :: FFTW.cFFTWPlan{ComplexF64,-1,false,3},
                    particles :: Particles, 
                    fx        :: Array{ComplexF64, 3} )
 
-    mul!(x̃t, ftau, xt) 
 
     for m=1:particles.nbpart
+
         t = particles.t[m]
+
         for n=1:ua.ntau
+
             elt = exp(-1im*ua.ltau[n]*t/ua.ε) 
             xt[n,1,m] = elt * x̃t[n,1,m] + ua.pl[n,m] * fx[n,1,m]
             xt[n,2,m] = elt * x̃t[n,2,m] + ua.pl[n,m] * fx[n,2,m]
+
         end
+
     end
 
 end
