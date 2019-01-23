@@ -5,3 +5,4 @@ deps/deps.jl
 *.swp
 Manifest.toml
 *.dat
+*.mem

@@ -43,7 +43,7 @@ function test_pic2d( ntau )
     tau  = ua.tau
     ltau = ua.ltau
 
-    et = zeros(Float64, (2, nbpart, ntau))
+    et  = zeros(Float64, (ntau, 2, nbpart))
 
     xt  = zeros(ComplexF64, (ntau, 2, nbpart))
     x̃t  = zeros(ComplexF64, (ntau, 2, nbpart))

@@ -129,8 +129,8 @@ function compute_f!( fx        :: Array{ComplexF64,3},
     
             interv = (1 + 0.5*sin(xt1)*sin(xt2)-b)/ua.ε
     
-            tmp1 = et[1,m,n]+(  cos(τ)*yt2 - sin(τ)*yt1)*interv
-            tmp2 = et[2,m,n]+(- cos(τ)*yt1 - sin(τ)*yt2)*interv
+            tmp1 = et[n,1,m]+(  cos(τ)*yt2 - sin(τ)*yt1)*interv
+            tmp2 = et[n,2,m]+(- cos(τ)*yt1 - sin(τ)*yt2)*interv
     
             fy[n,1,m] = (cos(τ)*tmp1-sin(τ)*tmp2)/b
             fy[n,2,m] = (sin(τ)*tmp1+cos(τ)*tmp2)/b

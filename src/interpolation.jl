@@ -110,7 +110,7 @@ function interpol_eb_m6!( e      :: Array{Float64,3},
            s += cp3x * cp2y * fields.e[l,ip3,jp2]   
            s += cp3x * cp3y * fields.e[l,ip3,jp3]
 
-           e[l,k,n] = s
+           e[n,l,k] = s
     
        end
 
