@@ -10,6 +10,9 @@ mutable struct UA
     ptau :: FFTW.cFFTWPlan{ComplexF64,-1,false,1}
     pl   :: Array{ComplexF64,2}
     ql   :: Array{ComplexF64,2}
+    r    :: Array{ComplexF64,2}
+    r̃    :: Array{ComplexF64,2}
+    rtau :: FFTW.cFFTWPlan{ComplexF64,-1,false,2}
 
     function UA( ntau, ε, nbpart )
 
@@ -28,7 +31,12 @@ mutable struct UA
         pl = zeros(ComplexF64, (ntau, nbpart))
         ql = zeros(ComplexF64, (ntau, nbpart))
 
-        new( ntau, ε, tau, ltau, ftau, ptau, pl, ql )
+        r  = zeros(ComplexF64, (ntau,2))
+        r̃  = zeros(ComplexF64, (ntau,2))
+
+        rtau = plan_fft(r,1)
+
+        new( ntau, ε, tau, ltau, ftau, ptau, pl, ql, r, r̃, rtau )
 
     end
 
