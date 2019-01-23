@@ -170,10 +170,8 @@ function calcul_rho_m6!( fields    :: MeshFields,
     
     fields.ρ ./= (dx*dy)
     
-    rho_total = sum(fields.ρ[1:nx,1:ny]) * dx * dy
+    rho_total = sum(view(fields.ρ,1:nx,1:ny)) * dx * dy
 
-    println( " rho_total = $rho_total ")
-    
     fields.ρ .-= rho_total/dimx/dimy
 
 
