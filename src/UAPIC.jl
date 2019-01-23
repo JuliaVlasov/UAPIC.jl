@@ -1,6 +1,6 @@
 module UAPIC
 
-import FFTW
+using FFTW
 using LinearAlgebra
 
 include("ua_type.jl")
