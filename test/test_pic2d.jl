@@ -74,53 +74,48 @@ function test_pic2d( ntau )
 
         compute_f!( fx, fy, ua, particles, xt, yt, et )
 
-        ua_step!( xt, x̃t, ua, ftau, particles, fx )
+        mul!(x̃t, ftau, xt) 
+
+        ua_step!( xt, x̃t, ua, particles, fx )
 
         ifft!(xt,1)
 
         mul!(ỹt, ftau, yt) 
 
-        for m=1:nbpart
-            t = particles.t[m]
-            for n=1:ntau
-                elt = exp(-1im*ltau[n]*t/ε) 
-                yt[n,1,m] = elt * ỹt[n,1,m] + ua.pl[n,m] * fy[n,1,m]
-                yt[n,2,m] = elt * ỹt[n,2,m] + ua.pl[n,m] * fy[n,2,m]
-            end
-        end
+        ua_step!( yt, ỹt, ua, particles, fy )
 
         ifft!(yt,1) 
 
         update_particles_x!( particles, fields, ua, xt)
+
         nrj = poisson!( fields ) 
+
         update_particles_e!( particles, et, fields, ua, xt)
 
         # correction
 
         compute_f!( gx, gy, ua, particles, xt, yt, et )
 
+        ua_step!( xt, x̃t, ua, particles, fx ) 
+
+        ua_step!( yt, ỹt, ua, particles, fy )
+
         for m=1:nbpart
 
             t = particles.t[m]
 
             for n=1:ntau
 
-                elt = exp(-1im*ltau[n]*t/ε) 
-
-                fx1 = fx[n,1,m]
-                fx2 = fx[n,2,m]
-                fy1 = fy[n,1,m]
-                fy2 = fy[n,2,m]
-
-                x̃t[n,1,m] = elt*x̃t[n,1,m] + ua.pl[n,m] * fx1 + ua.ql[n,m] * (gx[n,1,m] - fx1) / t
-                x̃t[n,2,m] = elt*x̃t[n,2,m] + ua.pl[n,m] * fx2 + ua.ql[n,m] * (gx[n,2,m] - fx2) / t
-                ỹt[n,1,m] = elt*ỹt[n,1,m] + ua.pl[n,m] * fy1 + ua.ql[n,m] * (gy[n,1,m] - fy1) / t
-                ỹt[n,2,m] = elt*ỹt[n,2,m] + ua.pl[n,m] * fy2 + ua.ql[n,m] * (gy[n,2,m] - fy2) / t
+                xt[n,1,m] += ua.ql[n,m] * (gx[n,1,m] - fx[n,1,m]) / t
+                xt[n,2,m] += ua.ql[n,m] * (gx[n,2,m] - fx[n,2,m]) / t
+                yt[n,1,m] += ua.ql[n,m] * (gy[n,1,m] - fy[n,1,m]) / t
+                yt[n,2,m] += ua.ql[n,m] * (gy[n,2,m] - fy[n,2,m]) / t
 
             end
+
         end
 
-        ldiv!(xt,ftau,x̃t)
+        ifft!(xt,1)
 
         update_particles_x!( particles, fields, ua, xt)
 
@@ -132,12 +127,11 @@ function test_pic2d( ntau )
 
             t = particles.t[m]
 
-            px = 0.0
-            py = 0.0
+            px, py = 0.0, 0.0
             for n = 1:ntau
                 elt = exp(1im*ltau[n]*t/ε) 
-                px += ỹt[n,1,m]/ntau * elt
-                py += ỹt[n,2,m]/ntau * elt
+                px += yt[n,1,m]/ntau * elt
+                py += yt[n,2,m]/ntau * elt
             end
 
             particles.v[1,m] = real(cos(t/ε)*px+sin(t/ε)*py)
