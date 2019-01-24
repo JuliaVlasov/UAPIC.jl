@@ -195,6 +195,7 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
     fields%rho = fields%rho / (dx*dy)
     
     rho_total = sum(fields%rho(1:nx,1:ny)) * dx * dy
+    print*, " rho total : ", rho_total
 
     fields%rho = fields%rho - rho_total/dimx/dimy
 

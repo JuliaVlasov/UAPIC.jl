@@ -51,17 +51,17 @@ subroutine preparation( ua, dt, particles, xt, yt)
         x1 = particles%x(1,m)
         x2 = particles%x(2,m)
 
-        t = dt * particles%b(m)
         b = 1d0 + 0.5d0 * sin(x1) * sin(x2)
+        t = dt * b
 
         particles%b(m) = b
         particles%t(m) = t
 
-        ua%pl(1,m) = cmplx(particles%t(m), 0d0, kind=8)
-        ua%ql(1,m) = cmplx(particles%t(m)**2 / 2d0, 0d0, kind=8)
+        ua%pl(1,m) = cmplx(t, 0d0, kind=8)
+        ua%ql(1,m) = cmplx(t**2 / 2d0, 0d0, kind=8)
 
         do n=2,ua%ntau
-            elt = exp(cmplx(0d0,-ua%ltau(n)*t/eps,kind=8))
+            elt = exp((0d0,-1d0) * ua%ltau(n)*t/eps)
             ua%pl(n,m) = eps * cmplx(0d0,1d0,kind=8) * (elt-1d0)/ua%ltau(n)
             ua%ql(n,m) = eps * (eps*(1d0-elt) -cmplx(0d0,1d0,kind=8)*ua%ltau(n)*t)/ua%ltau(n)**2
         end do
@@ -98,16 +98,16 @@ subroutine preparation( ua, dt, particles, xt, yt)
         call fftw_execute_dft(ua%fw, ua%rt(:,2), ua%rf(:,2)) 
 
         do n = 2,ntau
-            ua%rf(n,1) = cmplx(0d0, -1d0/ua%ltau(n), kind=8) * ua%rf(n,1) / real(ntau, kind=8)
-            ua%rf(n,2) = cmplx(0d0, -1d0/ua%ltau(n), kind=8) * ua%rf(n,2) / real(ntau, kind=8)
+            ua%rf(n,1) = -(0d0, 1d0) / ua%ltau(n) * ua%rf(n,1) / real(ntau, kind=8)
+            ua%rf(n,2) = -(0d0, 1d0) / ua%ltau(n) * ua%rf(n,2) / real(ntau, kind=8)
         end do
 
         call fftw_execute_dft(ua%bw, ua%rf(:,1), ua%rt(:,1)) 
         call fftw_execute_dft(ua%bw, ua%rf(:,2), ua%rt(:,2)) 
 
         do n = 1,ntau
-            yt(n,1,m) = cmplx(vx,0d0,kind=8) + (ua%rt(n,1) - ua%rt(1,1)) * eps
-            yt(n,2,m) = cmplx(vy,0d0,kind=8) + (ua%rt(n,2) - ua%rt(1,2)) * eps
+            yt(n,1,m) = vx + (ua%rt(n,1) - ua%rt(1,1)) * eps
+            yt(n,2,m) = vy + (ua%rt(n,2) - ua%rt(1,2)) * eps
         end do
 
     end do
@@ -202,7 +202,7 @@ subroutine compute_f( fx, fy, ua, particles, xt, yt, et )
 
 end subroutine compute_f
 
-subroutine ua_step( xt, xf, ua, particles, fx )
+subroutine ua_step1( xt, xf, ua, particles, fx )
 
     complex(8)        , intent(inout)  :: xt(:,:,:)
     complex(8)        , intent(out)    :: xf(:,:,:)
@@ -242,6 +242,49 @@ subroutine ua_step( xt, xf, ua, particles, fx )
 
     xf = xf / real(ua%ntau, kind=8)
 
-end subroutine ua_step
+end subroutine ua_step1
+
+subroutine ua_step2( xt, xf, ua, particles, fx, gx )
+
+    complex(8)        , intent(inout)  :: xt(:,:,:)
+    complex(8)        , intent(out)    :: xf(:,:,:)
+    type(ua_t)        , intent(in)     :: ua
+    type(particles_t) , intent(in)     :: particles 
+    complex(8)        , intent(in)     :: fx(:,:,:)
+    complex(8)        , intent(in)     :: gx(:,:,:)
+
+    real(8)           :: t
+    integer           :: m
+    integer           :: n
+    complex(8)        :: elt
+
+    complex(8), allocatable :: tmp(:,:)
+
+    allocate(tmp(ua%ntau,2))
+
+    do m = 1, particles%nbpart
+
+        call dfftw_execute_dft( ua%fw, xt(:,1,m), xf(:,1,m))
+        call dfftw_execute_dft( ua%fw, xt(:,2,m), xf(:,2,m))
+
+        t = particles%t(m)
+
+        do n=1,ua%ntau
+
+            elt = exp(-cmplx(0d0,1d0,kind=8)*ua%ltau(n)*t/ua%eps)
+            elt = elt / real(ua%ntau, kind=8)
+            tmp(n,1) = elt * xf(n,1,m) + ua%pl(n,m) * fx(n,1,m) &
+                     + ua%ql(n,m) * (gx(n,1,m) - fx(n,1,m)) / t
+            tmp(n,2) = elt * xf(n,2,m) + ua%pl(n,m) * fx(n,2,m) &
+                     + ua%ql(n,m) * (gx(n,2,m) - fx(n,2,m)) / t
+
+        end do
+
+        call fftw_execute_dft(ua%bw, tmp(:,1), xt(:,1,m)) 
+        call fftw_execute_dft(ua%bw, tmp(:,2), xt(:,2,m)) 
+
+    end do
+
+end subroutine ua_step2
 
 end module ua_steps_m

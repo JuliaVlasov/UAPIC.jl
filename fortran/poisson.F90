@@ -6,9 +6,11 @@ use mesh_fields_m
 
 implicit none
 
+private
+
 include 'fftw3.f03'
 
-type :: poisson_t
+type, public :: poisson_t
 
     type(mesh_t)            :: mesh
     complex(8), allocatable :: kx(:,:)
@@ -19,8 +21,9 @@ type :: poisson_t
     integer(8)              :: fw
     integer(8)              :: bw
 
-
 end type poisson_t
+
+public :: init_poisson, solve_poisson
 
 contains
 

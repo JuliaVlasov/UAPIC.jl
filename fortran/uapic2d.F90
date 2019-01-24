@@ -48,8 +48,8 @@ program uapic_2d
     integer :: m
     integer :: n
 
-    real(8) :: px
-    real(8) :: py
+    complex(8) :: px
+    complex(8) :: py
     real(8) :: dx
     real(8) :: dy
     real(8) :: dt
@@ -71,6 +71,9 @@ program uapic_2d
     call init_mesh_fields(fields, mesh )
     
     call init_particles( particles, nbpart, alpha, kx, dimx, dimy )
+
+    print*, " xp : ", sum(particles%x(1,:))
+    print*, " yp : ", sum(particles%x(2,:))
 
     call init_poisson( poisson, mesh )
 
@@ -98,11 +101,11 @@ program uapic_2d
 
         call preparation( ua, dt, particles, xt, yt) 
 
+        print*, " xt : ", sum(xt)
+        print*, " yt : ", sum(yt)
 
         call interpolation( particles, et, fields, ua, xt)
 
-        print*, " xt : ", sum(xt)
-        print*, " yt : ", sum(yt)
         print*, " et : ", sum(et)
 
         call compute_f( fx, fy, ua, particles, xt, yt, et )
@@ -113,48 +116,33 @@ program uapic_2d
         print*, " xt :", sum(xt)
         print*, " yt :", sum(yt)
 
-        call ua_step( xt, xf, ua, particles, fx )
-
-        call ua_step( yt, yf, ua, particles, fy )
+        call ua_step1( xt, xf, ua, particles, fx )
+        call ua_step1( yt, yf, ua, particles, fy )
 
         print*, " xt :", sum(xt)
         print*, " yt :", sum(yt)
-        stop
-
 
         call deposition( particles, fields, ua, xt)
 
         call solve_poisson( poisson, fields ) 
 
+        print*, " ex :", sum(fields%e(1,:,:))
+        print*, " ey :", sum(fields%e(2,:,:))
+
         call interpolation( particles, et, fields, ua, xt)
+        
+        print*, " et : ", sum(et)
 
         call compute_f( gx, gy, ua, particles, xt, yt, et )
 
-        call ua_step( xt, xf, ua, particles, fx ) 
+        print*, " gx :", sum(gx)
+        print*, " gy :", sum(gy)
 
-        call ua_step( yt, yf, ua, particles, fy )
+        call ua_step2( xt, xf, ua, particles, fx, gx ) 
+        call ua_step2( yt, yf, ua, particles, fy, gy )
 
-        do m=1,nbpart
-
-            t = particles%t(m)
-
-            do n=1,ntau
-
-                xt(n,1,m) = xt(n,1,m) + ua%ql(n,m) * (gx(n,1,m) - fx(n,1,m)) / t
-                xt(n,2,m) = xt(n,2,m) + ua%ql(n,m) * (gx(n,2,m) - fx(n,2,m)) / t
-                yt(n,1,m) = yt(n,1,m) + ua%ql(n,m) * (gy(n,1,m) - fy(n,1,m)) / t
-                yt(n,2,m) = yt(n,2,m) + ua%ql(n,m) * (gy(n,2,m) - fy(n,2,m)) / t
-
-            end do
-
-        end do
-
-        do m = 1, nbpart
-            call dfftw_execute_dft( ua%bw, xt(:,1,m), xt(:,1,m))
-            call dfftw_execute_dft( ua%bw, xt(:,2,m), xt(:,2,m))
-        end do
-
-        xt = xt / real(ntau, kind=8)
+        print*, " xt :", sum(xt)
+        print*, " yt :", sum(yt)
 
         call deposition( particles, fields, ua, xt)
 
@@ -162,28 +150,35 @@ program uapic_2d
 
         call interpolation( particles, et, fields, ua, xt)
 
+        print*, " et : ", sum(et)
+
         do m=1,nbpart
 
             t = particles%t(m)
 
-            px = 0d0
-            py = 0d0
+            call fftw_execute_dft(ua%fw, yt(:,1,m), yf(:,1,m)) 
+            call fftw_execute_dft(ua%fw, yt(:,2,m), yf(:,2,m)) 
+
+            px = (0d0, 0d0)
+            py = (0d0, 0d0)
 
             do n = 1,ntau
                 elt = exp(cmplx(0d0,1d0,kind=8)*ua%ltau(n)*t/eps) 
-                px = px + real(yt(n,1,m)/ntau * elt, kind=8)
-                py = py + real(yt(n,2,m)/ntau * elt, kind=8)
+                px = px + yf(n,1,m)/real(ntau,kind=8) * elt
+                py = py + yf(n,2,m)/real(ntau,kind=8) * elt
             end do
 
-            particles%v(1,m) = cos(t/eps)*px+sin(t/eps)*py
-            particles%v(2,m) = cos(t/eps)*py-sin(t/eps)*px
+            particles%v(1,m) = real(cos(t/eps)*px+sin(t/eps)*py)
+            particles%v(2,m) = real(cos(t/eps)*py-sin(t/eps)*px)
 
         end do
+        print*, " vx : ", sum(particles%v(1,:))
+        print*, " vy : ", sum(particles%v(2,:))
+        stop
 
 
     end do
 
-    print*, sum(particles%v(1,:)), sum(particles%v(2,:))
 
 end program uapic_2d
 

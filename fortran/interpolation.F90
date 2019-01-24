@@ -71,11 +71,6 @@ subroutine interpolate_eb_m6_complex( e, fields, x, nbpart, ntau )
     dimx = fields%mesh%xmax - fields%mesh%xmin
     dimy = fields%mesh%ymax - fields%mesh%ymin
 
-    print*, nx, ny
-    print*, dx, dy
-    print*, dimx, dimy
-    print*, nbpart
-
     do k=1,nbpart
 
         do n=1,ntau
