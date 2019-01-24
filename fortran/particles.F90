@@ -18,12 +18,12 @@ contains
 
 subroutine init_particles( self, nbpart, alpha, kx, dimx, dimy )
 
-    type(particles_t)  :: self
-    integer            :: nbpart
-    real(8)            :: alpha
-    real(8)            :: kx
-    real(8)            :: dimx
-    real(8)            :: dimy
+    type(particles_t), intent(out)  :: self
+    integer,           intent(in)   :: nbpart
+    real(8),           intent(in)   :: alpha
+    real(8),           intent(in)   :: kx
+    real(8),           intent(in)   :: dimx
+    real(8),           intent(in)   :: dimy
 
     integer              :: k
     real(8), parameter   :: eps = 1.d-12

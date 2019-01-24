@@ -4,27 +4,31 @@ program uapic_2d
     use particles_m
     use poisson_m
     use interpolation_m
-    use compute_rho
+    use compute_rho_m
+    use ua_steps_m
 
-    real(8), parameter :: kx       = 0.50
-    real(8), parameter :: ky       = 1.0
-    real(8), parameter :: pi       = 3.141592654d0
-    integer, parameter :: nx       = 128	
+    implicit none
+
+
+    real(8), parameter :: alpha    = 0.05d0 
+    real(8), parameter :: kx       = 0.5d0
+    real(8), parameter :: ky       = 1d0
+    integer, parameter :: nx       = 128
     integer, parameter :: ny       = 64 
-    real(8), parameter :: tfinal   = 1.0d0 
     real(8), parameter :: eps      = 0.1d0
+    integer, parameter :: nbpart   = 204800
+    integer, parameter :: ntau     = 16
+   
+    real(8)    :: t = 0d0
+    complex(8) :: elt
 
-    real(8) :: t = 0.
-
-    real(8) :: xmin = 0d0
-    real(8) :: xmax = dimx
-    real(8) :: ymin = 0d0
-    real(8) :: ymax = dimy
+    real(8) :: tfinal   = 1.0d0 
 
     type(mesh_t)        :: mesh
     type(mesh_fields_t) :: fields
     type(particles_t)   :: particles
-    type(poisson_t)     :: particles
+    type(poisson_t)     :: poisson
+    type(ua_t)          :: ua
 
     complex(8), allocatable :: xt(:,:,:)
     complex(8), allocatable :: xf(:,:,:)
@@ -37,55 +41,56 @@ program uapic_2d
 
     real(8), allocatable :: et(:,:,:)
 
-    real(8) :: pi 
     real(8) :: dimx
     real(8) :: dimy
+    integer :: istep
+    integer :: nstep
+    integer :: m
+    integer :: n
 
+    real(8) :: px
+    real(8) :: py
+    real(8) :: dx
+    real(8) :: dy
+    real(8) :: dt
 
-    pi       = 4d0 * atan(1d0)
-    dimx     = 2*pi/kx
-    dimy     = 2*pi/ky 
+    pi    = 4d0 * atan(1d0)
+    dimx  = 2d0*pi/kx
+    dimy  = 2d0*pi/ky 
 
-    call init_mesh( mesh, xmin, xmax, nx, ymin, ymax, ny )
+    call init_mesh( mesh, 0d0, dimx, nx, 0d0, dimy, ny )
 
     dx = mesh%dx
     dy = mesh%dy
 
-    dt = pi / 2 / (2**3) 
-    tfinal = pi / 2
+    dt = pi / 2d0 / (2d0**3) 
+    tfinal = pi / 2d0
 
     nstep  = floor(tfinal/dt)
 
     call init_mesh_fields(fields, mesh )
     
-    call init_particles( particles, mesh )
-
-    nbpart = particles%nbpart
+    call init_particles( particles, nbpart, alpha, kx, dimx, dimy )
 
     call init_poisson( poisson, mesh )
 
     call init_ua( ua, ntau, eps, nbpart )
 
-    tau  = ua.tau
-    ltau = ua.ltau
-
-    et  = zeros(Float64, (ntau, 2, nbpart))
+    allocate(et(ntau, 2, nbpart))
 
     allocate(xt(ntau, 2, nbpart))
     allocate(xf(ntau, 2, nbpart))
     allocate(yt(ntau, 2, nbpart))
     allocate(yf(ntau, 2, nbpart))
 
-    ftau = plan_fft(xt,  1)
-
     allocate(fx(ntau, 2, nbpart))
     allocate(fy(ntau, 2, nbpart))
     allocate(gx(ntau, 2, nbpart))
     allocate(gy(ntau, 2, nbpart))
 
-    call calcul_rho_m6( fields, particles )
+    call compute_rho_m6_real( fields, particles )
 
-    call poisson( fields )
+    call solve_poisson( poisson, fields )
 
     call interpolate_eb_m6_real( particles, fields )
 
@@ -93,39 +98,35 @@ program uapic_2d
 
         call preparation( ua, dt, particles, xt, yt) 
 
-        call update_particles_e( particles, et, fields, ua, xt)
+
+        call interpolation( particles, et, fields, ua, xt)
+
+        print*, " xt : ", sum(xt)
+        print*, " yt : ", sum(yt)
+        print*, " et : ", sum(et)
 
         call compute_f( fx, fy, ua, particles, xt, yt, et )
 
-        do m = 1, nbpart
-            call dfftw_execute_dft( ua%fw, xt(:,1,m), xf(:,1,m))
-            call dfftw_execute_dft( ua%fw, xt(:,2,m), xf(:,2,m))
-        end do
+        print*, " fx :", sum(fx)
+        print*, " fy :", sum(fy)
+
+        print*, " xt :", sum(xt)
+        print*, " yt :", sum(yt)
 
         call ua_step( xt, xf, ua, particles, fx )
 
-        do m = 1, nbpart
-            call dfftw_execute_dft( ua%bw, xt(:,1,m), xt(:,1,m))
-            call dfftw_execute_dft( ua%bw, xt(:,2,m), xt(:,2,m))
-        end do
-
-        do m = 1, nbpart
-            call dfftw_execute_dft( ua%fw, yt(:,1,m), yf(:,1,m))
-            call dfftw_execute_dft( ua%fw, yt(:,2,m), yf(:,2,m))
-        end do
-
         call ua_step( yt, yf, ua, particles, fy )
 
-        do m = 1, nbpart
-            call dfftw_execute_dft( ua%bw, yt(:,1,m), yt(:,1,m))
-            call dfftw_execute_dft( ua%bw, yt(:,2,m), yt(:,2,m))
-        end do
+        print*, " xt :", sum(xt)
+        print*, " yt :", sum(yt)
+        stop
 
-        call update_particles_x( particles, fields, ua, xt)
 
-        call poisson( fields ) 
+        call deposition( particles, fields, ua, xt)
 
-        call update_particles_e( particles, et, fields, ua, xt)
+        call solve_poisson( poisson, fields ) 
+
+        call interpolation( particles, et, fields, ua, xt)
 
         call compute_f( gx, gy, ua, particles, xt, yt, et )
 
@@ -153,11 +154,13 @@ program uapic_2d
             call dfftw_execute_dft( ua%bw, xt(:,2,m), xt(:,2,m))
         end do
 
-        call update_particles_x( particles, fields, ua, xt)
+        xt = xt / real(ntau, kind=8)
 
-        call nrj = poisson( fields )
+        call deposition( particles, fields, ua, xt)
 
-        call update_particles_e( particles, et, fields, ua, xt)
+        call solve_poisson( poisson, fields )
+
+        call interpolation( particles, et, fields, ua, xt)
 
         do m=1,nbpart
 
@@ -167,13 +170,13 @@ program uapic_2d
             py = 0d0
 
             do n = 1,ntau
-                elt = exp(1im*ltau(n)*t/eps) 
-                px = px + yt(n,1,m)/ntau * elt
-                py = py + yt(n,2,m)/ntau * elt
+                elt = exp(cmplx(0d0,1d0,kind=8)*ua%ltau(n)*t/eps) 
+                px = px + real(yt(n,1,m)/ntau * elt, kind=8)
+                py = py + real(yt(n,2,m)/ntau * elt, kind=8)
             end do
 
-            particles%v(1,m) = real(cos(t/eps)*px+sin(t/eps)*py)
-            particles%v(2,m) = real(cos(t/eps)*py-sin(t/eps)*px)
+            particles%v(1,m) = cos(t/eps)*px+sin(t/eps)*py
+            particles%v(2,m) = cos(t/eps)*py-sin(t/eps)*px
 
         end do
 

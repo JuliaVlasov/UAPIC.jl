@@ -1,6 +1,6 @@
-module compute_rho
+module compute_rho_m
 
-use ua_m
+use ua_type_m
 use particles_m
 use mesh_fields_m
 
@@ -37,7 +37,7 @@ function f_m6( q )
     else if ( q >= 2d0 .and. q < 3d0 ) then
         f_m6 = (3d0-q)**5
     else
-	f_m6 = 0d0
+    f_m6 = 0d0
     end if
     
     f_m6 = f_m6 / 120d0
@@ -51,11 +51,11 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
     complex(8)           :: xt(:,:,:)
     type(ua_t)           :: ua
 
-    real(8)              :: t
+    complex(8)           :: t
     real(8)              :: xt1
     real(8)              :: xt2
 
-    fields%rho = 0.0
+    fields%rho = 0d0
 
     nx = fields%mesh%nx
     ny = fields%mesh%ny
@@ -66,20 +66,20 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
 
     dimx = fields%mesh%xmax - fields%mesh%xmin
     dimy = fields%mesh%ymax - fields%mesh%ymin
-
+    
     do k = 1,particles%nbpart
     
-        t = particles%t(k)
+        t = cmplx(particles%t(k), 0d0, kind=8)
 
         call fftw_execute_dft(ua%fw, xt(:,1,k), ua%ft) 
 
-        ua%ft = ua%ft * exp(j*ua%ltau*t/ua%eps)/ua%ntau
+        ua%ft = ua%ft * exp(cmplx(0d0,1d0,kind=8)*ua%ltau*t/ua%eps)/cmplx(ua%ntau,0d0,kind=8)
 
         xt1 = real(sum(ua%ft))
 
         call fftw_execute_dft(ua%fw, xt(:,2,k), ua%ft) 
 
-        ua%ft = ua%ft * exp(j*ua%ltau*t/ua%eps)/ua%ntau
+        ua%ft = ua%ft * exp(cmplx(0d0,1d0,kind=8)*ua%ltau*t/ua%eps)/cmplx(ua%ntau,0d0,kind=8)
 
         xt2 = real(sum(ua%ft))
 
@@ -93,9 +93,9 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
         py = modulo(py, real(ny,8))
 
         ix  = floor(px)
-        dpx = px - ix
+        dpx = px - real(ix,kind=8)
         jy  = floor(py)
-        dpy = py - jy
+        dpy = py - real(jy,kind=8)
 
         weight = particles%w
       
@@ -130,7 +130,7 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
         cp3y = f_m6(3-dpy)
         cm3y = f_m6(3+dpy)
       
-	fields%rho(im3,jm3) = fields%rho(im3,jm3) + cm3x * cm3y * weight
+        fields%rho(im3,jm3) = fields%rho(im3,jm3) + cm3x * cm3y * weight
         fields%rho(im3,jm2) = fields%rho(im3,jm2) + cm3x * cm2y * weight
         fields%rho(im3,jm1) = fields%rho(im3,jm1) + cm3x * cm1y * weight
         fields%rho(im3,jy ) = fields%rho(im3,jy ) + cm3x * cy   * weight
@@ -138,7 +138,7 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
         fields%rho(im3,jp2) = fields%rho(im3,jp2) + cm3x * cp2y * weight
         fields%rho(im3,jp3) = fields%rho(im3,jp3) + cm3x * cp3y * weight
                                                    
-	fields%rho(im2,jm3) = fields%rho(im2,jm3) + cm2x * cm3y * weight
+        fields%rho(im2,jm3) = fields%rho(im2,jm3) + cm2x * cm3y * weight
         fields%rho(im2,jm2) = fields%rho(im2,jm2) + cm2x * cm2y * weight
         fields%rho(im2,jm1) = fields%rho(im2,jm1) + cm2x * cm1y * weight
         fields%rho(im2,jy ) = fields%rho(im2,jy ) + cm2x * cy   * weight
@@ -146,7 +146,7 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
         fields%rho(im2,jp2) = fields%rho(im2,jp2) + cm2x * cp2y * weight
         fields%rho(im2,jp3) = fields%rho(im2,jp3) + cm2x * cp3y * weight
                                                    
-	fields%rho(im1,jm3) = fields%rho(im1,jm3) + cm1x * cm3y * weight
+        fields%rho(im1,jm3) = fields%rho(im1,jm3) + cm1x * cm3y * weight
         fields%rho(im1,jm2) = fields%rho(im1,jm2) + cm1x * cm2y * weight
         fields%rho(im1,jm1) = fields%rho(im1,jm1) + cm1x * cm1y * weight
         fields%rho(im1,jy ) = fields%rho(im1,jy ) + cm1x * cy   * weight
@@ -226,9 +226,9 @@ subroutine compute_rho_m6_real( fields, particles)
         py = modulo(py, real(ny,8))
 
         ix  = floor(px)
-        dpx = px - ix
+        dpx = px - real(ix, kind=8)
         jy  = floor(py)
-        dpy = py - jy
+        dpy = py - real(jy, kind=8)
 
         weight = particles%w
       
@@ -333,5 +333,4 @@ subroutine compute_rho_m6_real( fields, particles)
 
 end subroutine compute_rho_m6_real
 
-end module compute_rho
-
+end module compute_rho_m

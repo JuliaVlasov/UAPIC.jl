@@ -29,21 +29,21 @@ contains
 
         type(mesh_t) :: self
 
-        real(8) , intent(in) :: xmin 
-        real(8) , intent(in) :: xmax 
-        integer , intent(in) :: nx   
-        real(8) , intent(in) :: ymin 
-        real(8) , intent(in) :: ymax 
-        real(8) , intent(in) :: ny   
+        real(8), intent(in) :: xmin 
+        real(8), intent(in) :: xmax 
+        integer, intent(in) :: nx   
+        real(8), intent(in) :: ymin 
+        real(8), intent(in) :: ymax 
+        integer, intent(in) :: ny   
 
         self%xmin = xmin
         self%xmax = xmax
         self%nx   = nx
         self%ymin = ymin
         self%ymax = ymax
-        self%dy   = ny
-        self%dx   = (xmax - xmin) / nx
-        self%dy   = (ymax - ymin) / ny
+        self%ny   = ny
+        self%dx   = (xmax - xmin) / real(nx,8)
+        self%dy   = (ymax - ymin) / real(ny,8)
 
     end
 
@@ -52,7 +52,7 @@ contains
          type(mesh_fields_t) :: self
          type(mesh_t)        :: mesh
 	    
-	     self%mesh = mesh
+         self%mesh = mesh
 
          allocate(self%e(2, mesh%nx+1, mesh%ny+1))
          allocate(self%rho(mesh%nx+1, mesh%ny+1))

@@ -1,6 +1,6 @@
 module interpolation_m
 
-use compute_rho
+use compute_rho_m
 use particles_m
 use mesh_fields_m
 
@@ -39,11 +39,11 @@ contains
 
 subroutine interpolate_eb_m6_complex( e, fields, x, nbpart, ntau )
 
-    real(8)             :: e(:,:,:)
-    type(mesh_fields_t) :: fields
-    complex(8)          :: x(:,:,:)
-    integer             :: nbpart
-    integer             :: ntau
+    real(8),             intent(out) :: e(:,:,:)
+    type(mesh_fields_t), intent(in)  :: fields
+    complex(8),          intent(in)  :: x(:,:,:)
+    integer,             intent(in)  :: nbpart
+    integer,             intent(in)  :: ntau
 
     real(8)             :: dimx
     real(8)             :: dimy
@@ -71,6 +71,11 @@ subroutine interpolate_eb_m6_complex( e, fields, x, nbpart, ntau )
     dimx = fields%mesh%xmax - fields%mesh%xmin
     dimy = fields%mesh%ymax - fields%mesh%ymin
 
+    print*, nx, ny
+    print*, dx, dy
+    print*, dimx, dimy
+    print*, nbpart
+
     do k=1,nbpart
 
         do n=1,ntau
@@ -82,9 +87,9 @@ subroutine interpolate_eb_m6_complex( e, fields, x, nbpart, ntau )
             py = modulo(py, real(ny,8))
 
             i   = floor(px)
-            dpx = px - i
+            dpx = px - real(i, kind=8)
             j   = floor(py)
-            dpy = py - j
+            dpy = py - real(j, kind=8)
     
             im3 = modulo(i-3,nx) + 1
             im2 = modulo(i-2,nx) + 1
@@ -120,7 +125,7 @@ subroutine interpolate_eb_m6_complex( e, fields, x, nbpart, ntau )
      
             do l = 1,2
 
-                s = 0.0
+                s = 0d0
                 s = s + cm3x * cm3y * fields%e(l,im3,jm3)   
                 s = s + cm3x * cm2y * fields%e(l,im3,jm2)   
                 s = s + cm3x * cm1y * fields%e(l,im3,jm1)   
@@ -194,7 +199,6 @@ subroutine interpolate_eb_m6_real( particles, fields )
     real(8) :: dimy
     real(8) :: dpx
     real(8) :: dpy
-    real(8) :: s
     integer :: i
     integer :: j
     integer :: k
@@ -221,9 +225,9 @@ subroutine interpolate_eb_m6_real( particles, fields )
        py = modulo(py, real(ny,8))
 
        i   = floor(px)
-       dpx = px - i
+       dpx = px - real(i, kind=8)
        j   = floor(py)
-       dpy = py - j
+       dpy = py - real(j, kind=8)
     
        im3 = modulo(i-3,nx) + 1
        im2 = modulo(i-2,nx) + 1
@@ -259,7 +263,7 @@ subroutine interpolate_eb_m6_real( particles, fields )
      
        do l = 1,2
 
-           e = 0.0
+           e = 0d0
            e = e + cm3x * cm3y * fields%e(l,im3,jm3)   
            e = e + cm3x * cm2y * fields%e(l,im3,jm2)   
            e = e + cm3x * cm1y * fields%e(l,im3,jm1)   
