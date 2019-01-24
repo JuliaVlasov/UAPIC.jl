@@ -205,7 +205,7 @@ end subroutine compute_f
 subroutine ua_step1( xt, xf, ua, particles, fx )
 
     complex(8)        , intent(inout)  :: xt(:,:,:)
-    complex(8)        , intent(out)    :: xf(:,:,:)
+    complex(8)        , intent(inout)  :: xf(:,:,:)
     type(ua_t)        , intent(in)     :: ua
     type(particles_t) , intent(in)     :: particles 
     complex(8)        , intent(in)     :: fx(:,:,:)
@@ -240,14 +240,12 @@ subroutine ua_step1( xt, xf, ua, particles, fx )
 
     end do
 
-    xf = xf / real(ua%ntau, kind=8)
-
 end subroutine ua_step1
 
 subroutine ua_step2( xt, xf, ua, particles, fx, gx )
 
     complex(8)        , intent(inout)  :: xt(:,:,:)
-    complex(8)        , intent(out)    :: xf(:,:,:)
+    complex(8)        , intent(in)     :: xf(:,:,:)
     type(ua_t)        , intent(in)     :: ua
     type(particles_t) , intent(in)     :: particles 
     complex(8)        , intent(in)     :: fx(:,:,:)
@@ -263,9 +261,6 @@ subroutine ua_step2( xt, xf, ua, particles, fx, gx )
     allocate(tmp(ua%ntau,2))
 
     do m = 1, particles%nbpart
-
-        call dfftw_execute_dft( ua%fw, xt(:,1,m), xf(:,1,m))
-        call dfftw_execute_dft( ua%fw, xt(:,2,m), xf(:,2,m))
 
         t = particles%t(m)
 

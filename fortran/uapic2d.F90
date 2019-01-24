@@ -97,7 +97,7 @@ program uapic_2d
 
     call interpolate_eb_m6_real( particles, fields )
 
-    do istep = 1,2
+    do istep = 1,nstep
 
         call preparation( ua, dt, particles, xt, yt) 
 
@@ -113,18 +113,18 @@ program uapic_2d
         print*, " fx :", sum(fx)
         print*, " fy :", sum(fy)
 
-        print*, " xt :", sum(xt)
-        print*, " yt :", sum(yt)
-
         call ua_step1( xt, xf, ua, particles, fx )
         call ua_step1( yt, yf, ua, particles, fy )
-
         print*, " xt :", sum(xt)
         print*, " yt :", sum(yt)
+        print*, " xf :", sum(xf)
+        print*, " yf :", sum(yf)
 
         call deposition( particles, fields, ua, xt)
 
         call solve_poisson( poisson, fields ) 
+        print*," nrj = ", sum(fields%e(1,:,:)**2+fields%e(2,:,:)**2)*dx*dy
+
 
         print*, " ex :", sum(fields%e(1,:,:))
         print*, " ey :", sum(fields%e(2,:,:))
@@ -174,7 +174,6 @@ program uapic_2d
         end do
         print*, " vx : ", sum(particles%v(1,:))
         print*, " vy : ", sum(particles%v(2,:))
-        stop
 
 
     end do

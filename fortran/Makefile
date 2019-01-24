@@ -10,6 +10,7 @@ LIBS =	-lfftw3
 
 F90 = gfortran
 F90FLAGS = -I/usr/local/include -fstack-arrays -O0 -g -fbacktrace -Wall -pedantic -Wconversion-extra -Wuninitialized -fcheck=array-temps,bounds,do,pointer,recursion -ffpe-trap=invalid,zero,overflow
+F90FLAGS = -I/usr/local/include -O3
 LDFLAGS =  
 
 all: $(PROG)
