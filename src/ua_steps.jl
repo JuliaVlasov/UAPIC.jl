@@ -168,3 +168,57 @@ function ua_step!( xt        :: Array{ComplexF64, 3},
     end
 
 end
+
+function ua_step!( xt        :: Array{ComplexF64, 3}, 
+                   x̃t        :: Array{ComplexF64, 3}, 
+                   ua        :: UA, 
+                   particles :: Particles, 
+                   fx        :: Array{ComplexF64, 3},
+                   gx        :: Array{ComplexF64, 3} )
+
+     for m=1:particles.nbpart
+
+         t = particles.t[m]
+
+         for n=1:ua.ntau
+
+             elt = exp(-1im*ua.ltau[n]*t/ua.ε) 
+             fx1 = fx[n,1,m]
+             fx2 = fx[n,2,m]
+             xt1 = elt * x̃t[n,1,m] + ua.pl[n,m] * fx1
+             xt2 = elt * x̃t[n,2,m] + ua.pl[n,m] * fx2
+             xt1 += ua.ql[n,m] * (gx[n,1,m] - fx1) / t
+             xt2 += ua.ql[n,m] * (gx[n,2,m] - fx2) / t
+
+             xt[n,1,m] = xt1
+             xt[n,2,m] = xt2
+
+         end
+
+    end
+
+end
+
+export compute_v!
+
+function compute_v!( yt       :: Array{ComplexF64, 3},
+                    particles :: Particles, 
+                    ua        :: UA )
+
+        for m=1:particles.nbpart
+
+            t = particles.t[m]
+
+            px, py = 0.0im, 0.0im
+            for n = 1:ua.ntau
+                elt = exp(1im*ua.ltau[n]*t/ua.ε) 
+                px += yt[n,1,m]/ua.ntau * elt
+                py += yt[n,2,m]/ua.ntau * elt
+            end
+
+            particles.v[1,m] = real(cos(t/ua.ε)*px+sin(t/ua.ε)*py)
+            particles.v[2,m] = real(cos(t/ua.ε)*py-sin(t/ua.ε)*px)
+
+        end
+
+end

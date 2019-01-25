@@ -64,7 +64,7 @@ function test_pic2d( ntau )
 
     interpol_eb_m6!( particles, fields )
 
-    for istep = 1:2
+    for istep = 1:nstep
 
         preparation!( ua, dt, particles, xt, yt) 
 
@@ -74,17 +74,14 @@ function test_pic2d( ntau )
 
         compute_f!( fx, fy, ua, particles, xt, yt, et )
 
-        mul!(x̃t, ftau, xt) 
-
+        mul!(x̃t, ftau, xt)
         ua_step!( xt, x̃t, ua, particles, fx )
 
-        ifft!(xt,1)
-
-        mul!(ỹt, ftau, yt) 
-
+        mul!(ỹt, ftau, yt)
         ua_step!( yt, ỹt, ua, particles, fy )
 
-        ifft!(yt,1) 
+        ifft!(xt,1)
+        ifft!(yt,1)
 
         update_particles_x!( particles, fields, ua, xt)
 
@@ -96,24 +93,9 @@ function test_pic2d( ntau )
 
         compute_f!( gx, gy, ua, particles, xt, yt, et )
 
-        ua_step!( xt, x̃t, ua, particles, fx ) 
+        ua_step!( xt, x̃t, ua, particles, fx, gx ) 
 
-        ua_step!( yt, ỹt, ua, particles, fy )
-
-        for m=1:nbpart
-
-            t = particles.t[m]
-
-            for n=1:ntau
-
-                xt[n,1,m] += ua.ql[n,m] * (gx[n,1,m] - fx[n,1,m]) / t
-                xt[n,2,m] += ua.ql[n,m] * (gx[n,2,m] - fx[n,2,m]) / t
-                yt[n,1,m] += ua.ql[n,m] * (gy[n,1,m] - fy[n,1,m]) / t
-                yt[n,2,m] += ua.ql[n,m] * (gy[n,2,m] - fy[n,2,m]) / t
-
-            end
-
-        end
+        ua_step!( yt, ỹt, ua, particles, fy, gy )
 
         ifft!(xt,1)
 
@@ -123,26 +105,12 @@ function test_pic2d( ntau )
 
         update_particles_e!( particles, et, fields, ua, xt)
 
-        for m=1:nbpart
+        compute_v!( yt, particles, ua )
 
-            t = particles.t[m]
-
-            px, py = 0.0, 0.0
-            for n = 1:ntau
-                elt = exp(1im*ltau[n]*t/ε) 
-                px += yt[n,1,m]/ntau * elt
-                py += yt[n,2,m]/ntau * elt
-            end
-
-            particles.v[1,m] = real(cos(t/ε)*px+sin(t/ε)*py)
-            particles.v[2,m] = real(cos(t/ε)*py-sin(t/ε)*px)
-
-        end
-
+        @show @views sum(particles.v[1,:]), sum(particles.v[2,:])
 
     end
 
-    @show @views sum(particles.v[1,:]), sum(particles.v[2,:])
 
     true
 

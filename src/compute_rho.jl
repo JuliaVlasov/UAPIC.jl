@@ -7,7 +7,7 @@
                |  0                           for q >= 3
 """
 
-function f_m6( q :: Float64 )
+@inline function f_m6( q :: Float64 )
 
 
     if ( q < 1.0 ) 

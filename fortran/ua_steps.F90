@@ -156,11 +156,6 @@ subroutine compute_f( fx, fy, ua, particles, xt, yt, et )
     complex(8) :: yt1
     complex(8) :: yt2
     real(8)    :: b
-    complex(8), allocatable :: fxt(:,:)
-    complex(8), allocatable :: fyt(:,:)
-
-    allocate(fxt(ua%ntau,2))
-    allocate(fyt(ua%ntau,2))
 
     do m=1,particles%nbpart
     
@@ -176,23 +171,23 @@ subroutine compute_f( fx, fy, ua, particles, xt, yt, et )
     
             tau = ua%tau(n)
     
-            fxt(n,1) = ( cos(tau) * yt1 + sin(tau) * yt2)/b
-            fxt(n,2) = (-sin(tau) * yt1 + cos(tau) * yt2)/b
+            fx(n,1,m) = ( cos(tau) * yt1 + sin(tau) * yt2)/b
+            fx(n,2,m) = (-sin(tau) * yt1 + cos(tau) * yt2)/b
     
             interv = (1d0 + 0.5d0*sin(xt1)*sin(xt2)-b)/ua%eps
     
             tmp1 = et(n,1,m)+(  cos(tau)*yt2 - sin(tau)*yt1)*interv
             tmp2 = et(n,2,m)+(- cos(tau)*yt1 - sin(tau)*yt2)*interv
     
-            fyt(n,1) = (cos(tau)*tmp1-sin(tau)*tmp2)/b
-            fyt(n,2) = (sin(tau)*tmp1+cos(tau)*tmp2)/b
+            fy(n,1,m) = (cos(tau)*tmp1-sin(tau)*tmp2)/b
+            fy(n,2,m) = (sin(tau)*tmp1+cos(tau)*tmp2)/b
     
         end do
 
-        call fftw_execute_dft(ua%fw, fxt(:,1), fx(:,1,m)) 
-        call fftw_execute_dft(ua%fw, fxt(:,2), fx(:,2,m)) 
-        call fftw_execute_dft(ua%fw, fyt(:,1), fy(:,1,m)) 
-        call fftw_execute_dft(ua%fw, fyt(:,2), fy(:,2,m)) 
+        call fftw_execute_dft(ua%fw, fx(:,1,m), fx(:,1,m)) 
+        call fftw_execute_dft(ua%fw, fx(:,2,m), fx(:,2,m)) 
+        call fftw_execute_dft(ua%fw, fy(:,1,m), fy(:,1,m)) 
+        call fftw_execute_dft(ua%fw, fy(:,2,m), fy(:,2,m)) 
 
     end do
 
@@ -206,7 +201,7 @@ subroutine ua_step1( xt, xf, ua, particles, fx )
 
     complex(8)        , intent(inout)  :: xt(:,:,:)
     complex(8)        , intent(inout)  :: xf(:,:,:)
-    type(ua_t)        , intent(in)     :: ua
+    type(ua_t)        , intent(inout)  :: ua
     type(particles_t) , intent(in)     :: particles 
     complex(8)        , intent(in)     :: fx(:,:,:)
 
@@ -216,8 +211,6 @@ subroutine ua_step1( xt, xf, ua, particles, fx )
     complex(8)        :: elt
 
     complex(8), allocatable :: tmp(:,:)
-
-    allocate(tmp(ua%ntau,2))
 
     do m = 1, particles%nbpart
 
@@ -230,13 +223,13 @@ subroutine ua_step1( xt, xf, ua, particles, fx )
 
             elt = exp(-cmplx(0d0,1d0,kind=8)*ua%ltau(n)*t/ua%eps)
             elt = elt / real(ua%ntau, kind=8)
-            tmp(n,1) = elt * xf(n,1,m) + ua%pl(n,m) * fx(n,1,m)
-            tmp(n,2) = elt * xf(n,2,m) + ua%pl(n,m) * fx(n,2,m)
+            ua%rf(n,1) = elt * xf(n,1,m) + ua%pl(n,m) * fx(n,1,m)
+            ua%rf(n,2) = elt * xf(n,2,m) + ua%pl(n,m) * fx(n,2,m)
 
         end do
 
-        call fftw_execute_dft(ua%bw, tmp(:,1), xt(:,1,m)) 
-        call fftw_execute_dft(ua%bw, tmp(:,2), xt(:,2,m)) 
+        call fftw_execute_dft(ua%bw, ua%rf(:,1), xt(:,1,m)) 
+        call fftw_execute_dft(ua%bw, ua%rf(:,2), xt(:,2,m)) 
 
     end do
 
@@ -246,7 +239,7 @@ subroutine ua_step2( xt, xf, ua, particles, fx, gx )
 
     complex(8)        , intent(inout)  :: xt(:,:,:)
     complex(8)        , intent(in)     :: xf(:,:,:)
-    type(ua_t)        , intent(in)     :: ua
+    type(ua_t)        , intent(inout)  :: ua
     type(particles_t) , intent(in)     :: particles 
     complex(8)        , intent(in)     :: fx(:,:,:)
     complex(8)        , intent(in)     :: gx(:,:,:)
@@ -256,10 +249,6 @@ subroutine ua_step2( xt, xf, ua, particles, fx, gx )
     integer           :: n
     complex(8)        :: elt
 
-    complex(8), allocatable :: tmp(:,:)
-
-    allocate(tmp(ua%ntau,2))
-
     do m = 1, particles%nbpart
 
         t = particles%t(m)
@@ -268,18 +257,53 @@ subroutine ua_step2( xt, xf, ua, particles, fx, gx )
 
             elt = exp(-cmplx(0d0,1d0,kind=8)*ua%ltau(n)*t/ua%eps)
             elt = elt / real(ua%ntau, kind=8)
-            tmp(n,1) = elt * xf(n,1,m) + ua%pl(n,m) * fx(n,1,m) &
+            ua%rf(n,1) = elt * xf(n,1,m) + ua%pl(n,m) * fx(n,1,m) &
                      + ua%ql(n,m) * (gx(n,1,m) - fx(n,1,m)) / t
-            tmp(n,2) = elt * xf(n,2,m) + ua%pl(n,m) * fx(n,2,m) &
+            ua%rf(n,2) = elt * xf(n,2,m) + ua%pl(n,m) * fx(n,2,m) &
                      + ua%ql(n,m) * (gx(n,2,m) - fx(n,2,m)) / t
 
         end do
 
-        call fftw_execute_dft(ua%bw, tmp(:,1), xt(:,1,m)) 
-        call fftw_execute_dft(ua%bw, tmp(:,2), xt(:,2,m)) 
+        call fftw_execute_dft(ua%bw, ua%rf(:,1), xt(:,1,m)) 
+        call fftw_execute_dft(ua%bw, ua%rf(:,2), xt(:,2,m)) 
 
     end do
 
 end subroutine ua_step2
+
+subroutine compute_v( ua, particles, yt, yf )
+
+    type(ua_t)        , intent(inout)  :: ua
+    type(particles_t) , intent(inout)  :: particles 
+    complex(8)        , intent(inout)  :: yt(:,:,:)
+    complex(8)        , intent(inout)  :: yf(:,:,:)
+
+    real(8)    :: t
+    complex(8) :: elt
+    complex(8) :: px
+    complex(8) :: py
+
+    do m=1, particles%nbpart
+
+        t = particles%t(m)
+
+        call fftw_execute_dft(ua%fw, yt(:,1,m), yf(:,1,m)) 
+        call fftw_execute_dft(ua%fw, yt(:,2,m), yf(:,2,m)) 
+
+        px = (0d0, 0d0)
+        py = (0d0, 0d0)
+
+        do n = 1, ua%ntau
+            elt = exp(cmplx(0d0,1d0,kind=8)*ua%ltau(n)*t/ua%eps) 
+            px = px + yf(n,1,m)/real(ua%ntau,kind=8) * elt
+            py = py + yf(n,2,m)/real(ua%ntau,kind=8) * elt
+        end do
+
+        particles%v(1,m) = real(cos(t/ua%eps)*px+sin(t/ua%eps)*py)
+        particles%v(2,m) = real(cos(t/ua%eps)*py-sin(t/ua%eps)*px)
+
+    end do
+
+end subroutine compute_v
 
 end module ua_steps_m

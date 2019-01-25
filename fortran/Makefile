@@ -30,7 +30,7 @@ clean:
 	$(F90) $(F90FLAGS) -c $*.f90
 
 meshfields.o: meshfields.f90
-particles.o: particles.f90
+particles.o: particles.f90 meshfields.o
 compute_rho.o: compute_rho.f90 meshfields.o particles.o ua_type.o
 interpolation.o: interpolation.f90 meshfields.o particles.o compute_rho.o
 poisson.o: poisson.f90 meshfields.o 

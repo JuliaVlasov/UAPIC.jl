@@ -70,22 +70,17 @@ program uapic_2d
 
     call init_mesh_fields(fields, mesh )
     
-    call init_particles( particles, nbpart, alpha, kx, dimx, dimy )
-
-    print*, " xp : ", sum(particles%x(1,:))
-    print*, " yp : ", sum(particles%x(2,:))
+    call init_particles( particles, nbpart, mesh, alpha, kx )
 
     call init_poisson( poisson, mesh )
 
     call init_ua( ua, ntau, eps, nbpart )
 
     allocate(et(ntau, 2, nbpart))
-
     allocate(xt(ntau, 2, nbpart))
     allocate(xf(ntau, 2, nbpart))
     allocate(yt(ntau, 2, nbpart))
     allocate(yf(ntau, 2, nbpart))
-
     allocate(fx(ntau, 2, nbpart))
     allocate(fy(ntau, 2, nbpart))
     allocate(gx(ntau, 2, nbpart))
@@ -101,48 +96,23 @@ program uapic_2d
 
         call preparation( ua, dt, particles, xt, yt) 
 
-        print*, " xt : ", sum(xt)
-        print*, " yt : ", sum(yt)
-
         call interpolation( particles, et, fields, ua, xt)
-
-        print*, " et : ", sum(et)
 
         call compute_f( fx, fy, ua, particles, xt, yt, et )
 
-        print*, " fx :", sum(fx)
-        print*, " fy :", sum(fy)
-
         call ua_step1( xt, xf, ua, particles, fx )
         call ua_step1( yt, yf, ua, particles, fy )
-        print*, " xt :", sum(xt)
-        print*, " yt :", sum(yt)
-        print*, " xf :", sum(xf)
-        print*, " yf :", sum(yf)
 
         call deposition( particles, fields, ua, xt)
 
         call solve_poisson( poisson, fields ) 
-        print*," nrj = ", sum(fields%e(1,:,:)**2+fields%e(2,:,:)**2)*dx*dy
-
-
-        print*, " ex :", sum(fields%e(1,:,:))
-        print*, " ey :", sum(fields%e(2,:,:))
 
         call interpolation( particles, et, fields, ua, xt)
         
-        print*, " et : ", sum(et)
-
         call compute_f( gx, gy, ua, particles, xt, yt, et )
-
-        print*, " gx :", sum(gx)
-        print*, " gy :", sum(gy)
 
         call ua_step2( xt, xf, ua, particles, fx, gx ) 
         call ua_step2( yt, yf, ua, particles, fy, gy )
-
-        print*, " xt :", sum(xt)
-        print*, " yt :", sum(yt)
 
         call deposition( particles, fields, ua, xt)
 
@@ -150,30 +120,9 @@ program uapic_2d
 
         call interpolation( particles, et, fields, ua, xt)
 
-        print*, " et : ", sum(et)
+        call compute_v( ua, particles, yt, yf )
 
-        do m=1,nbpart
-
-            t = particles%t(m)
-
-            call fftw_execute_dft(ua%fw, yt(:,1,m), yf(:,1,m)) 
-            call fftw_execute_dft(ua%fw, yt(:,2,m), yf(:,2,m)) 
-
-            px = (0d0, 0d0)
-            py = (0d0, 0d0)
-
-            do n = 1,ntau
-                elt = exp(cmplx(0d0,1d0,kind=8)*ua%ltau(n)*t/eps) 
-                px = px + yf(n,1,m)/real(ntau,kind=8) * elt
-                py = py + yf(n,2,m)/real(ntau,kind=8) * elt
-            end do
-
-            particles%v(1,m) = real(cos(t/eps)*px+sin(t/eps)*py)
-            particles%v(2,m) = real(cos(t/eps)*py-sin(t/eps)*px)
-
-        end do
-        print*, " vx : ", sum(particles%v(1,:))
-        print*, " vy : ", sum(particles%v(2,:))
+        print*, " vx, vy : ", sum(particles%v(1,:)), sum(particles%v(2,:))
 
 
     end do

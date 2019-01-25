@@ -1,5 +1,7 @@
 module particles_m
 
+use mesh_fields_m
+
 implicit none
 
 type :: particles_t
@@ -16,15 +18,19 @@ end type particles_t
 
 contains
 
-subroutine init_particles( self, nbpart, alpha, kx, dimx, dimy )
+subroutine init_particles( self, nbpart, mesh, alpha, kx )
 
     type(particles_t), intent(out)  :: self
     integer,           intent(in)   :: nbpart
+    type(mesh_t),      intent(in)   :: mesh
     real(8),           intent(in)   :: alpha
     real(8),           intent(in)   :: kx
-    real(8),           intent(in)   :: dimx
-    real(8),           intent(in)   :: dimy
 
+    real(8)              :: dimx
+    real(8)              :: dimy
+    integer              :: m
+    integer              :: i
+    integer              :: j
     integer              :: k
     real(8), parameter   :: eps = 1.d-12
     real(8)              :: xi, yi, zi
@@ -39,6 +45,9 @@ subroutine init_particles( self, nbpart, alpha, kx, dimx, dimy )
     allocate(self%e(2,nbpart))
     allocate(self%b(nbpart))
     allocate(self%t(nbpart))
+
+    dimx = mesh%xmax - mesh%xmin
+    dimy = mesh%ymax - mesh%ymin
 
     self%w = dimx * dimy / nbpart
 
@@ -61,9 +70,9 @@ subroutine init_particles( self, nbpart, alpha, kx, dimx, dimy )
     do while (k<=nbpart)
 
         call random_number(xi)
-        xi   = dimx * xi
+        xi   = xi * dimx
         call random_number(yi)
-        yi   = dimy * yi
+        yi   = yi * dimy
         call random_number(zi)
         zi   = (2d0+alpha)*zi
         temm = 1d0+sin(yi)+alpha*cos(kx*xi)
@@ -72,7 +81,6 @@ subroutine init_particles( self, nbpart, alpha, kx, dimx, dimy )
             self%x(2,k) = yi
             k = k + 1
         end if
-
     end do
     
     k = 1
