@@ -45,6 +45,10 @@ subroutine interpolate_eb_m6_complex( e, fields, x, nbpart, ntau )
     integer,             intent(in)  :: nbpart
     integer,             intent(in)  :: ntau
 
+    real(8)             :: xmin
+    real(8)             :: xmax
+    real(8)             :: ymin
+    real(8)             :: ymax
     real(8)             :: dimx
     real(8)             :: dimy
     integer             :: i
