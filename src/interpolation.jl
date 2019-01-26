@@ -9,20 +9,23 @@ function interpol_eb_m6!( e      :: Array{Float64,3},
     nx, ny = fields.mesh.nx, fields.mesh.ny
     dx, dy = fields.mesh.dx, fields.mesh.dy
 
-    dimx = fields.mesh.xmax - fields.mesh.xmin
-    dimy = fields.mesh.ymax - fields.mesh.ymin
+    xmin, xmax = fields.mesh.xmin, fields.mesh.xmax
+    ymin, ymax = fields.mesh.ymin, fields.mesh.ymax
+    dimx = xmax - xmin
+    dimy = ymax - ymin
 
     for k=1:nbpart, n=1:ntau
     
-       px = real(x[n,1,k])/dx
-       py = real(x[n,2,k])/dy
+       xn = mod( real(x[n,1,k]) - xmin, dimx)
+       yn = mod( real(x[n,2,k]) - ymin, dimy)
 
-       px = mod(px, nx)
-       py = mod(py, ny)
+       px = real(xn)/dx
+       py = real(yn)/dy
 
-       i   = trunc(Int32, px)
+       i = trunc(Int32, px)
+       j = trunc(Int32, py)
+
        dpx = px - i
-       j   = trunc(Int32, py)
        dpy = py - j
     
        im3 = mod(i-3,nx) + 1
@@ -127,22 +130,28 @@ function interpol_eb_m6!( particles :: Particles, fields :: MeshFields )
     dx = fields.mesh.dx
     dy = fields.mesh.dy
 
-    dimx = fields.mesh.xmax - fields.mesh.xmin
-    dimy = fields.mesh.ymax - fields.mesh.ymin
+    xmin, xmax = fields.mesh.xmin, fields.mesh.xmax
+    ymin, ymax = fields.mesh.ymin, fields.mesh.ymax
+    dimx = xmax - xmin
+    dimy = ymax - ymin
 
     for k=1:particles.nbpart
     
-       px = particles.x[1,k]/dx
-       py = particles.x[2,k]/dy
+       xn = mod( particles.x[1,k] - xmin, dimx)
+       yn = mod( particles.x[2,k] - ymin, dimy)
 
-       px = mod(px, nx)
-       py = mod(py, ny)
+       px = xn/dx
+       py = yn/dy
 
-       i   = trunc(Int32, px)
+       i = trunc(Int32, px)
+       j = trunc(Int32, py)
+
        dpx = px - i
-       j   = trunc(Int32, py)
        dpy = py - j
-    
+
+       particles.x[1,k] = xmin + xn
+       particles.x[2,k] = ymin + yn
+
        im3 = mod(i-3,nx) + 1
        im2 = mod(i-2,nx) + 1
        im1 = mod(i-1,nx) + 1
