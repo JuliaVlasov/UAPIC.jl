@@ -35,9 +35,10 @@ function calcul_rho_m6!( fields    :: MeshFields,
     nx, ny = fields.mesh.nx, fields.mesh.ny
     dx, dy = fields.mesh.dx, fields.mesh.dy
 
-    dimx = fields.mesh.xmax - fields.mesh.xmin
-    dimy = fields.mesh.ymax - fields.mesh.ymin
-
+    xmin, xmax = fields.mesh.xmin, fields.mesh.xmax                            
+    ymin, ymax = fields.mesh.ymin, fields.mesh.ymax                            
+    dimx = xmax - xmin                                                          
+    dimy = ymax - ymin                                                          
 
     for k = 1:particles.nbpart
     
@@ -59,18 +60,18 @@ function calcul_rho_m6!( fields    :: MeshFields,
 
         xt2 = real(sum(ua.ftau))
 
-        particles.x[1,k] = xt1
-        particles.x[2,k] = xt2
+        xt1 = mod( xt1 - xmin , dimx)
+        xt2 = mod( xt2 - ymin , dimy)
 
         px = xt1/dx
         py = xt2/dy
+                                                                                  
+        particles.x[1,k] = xt1 + xmin
+        particles.x[2,k] = xt2 + ymin
 
-        px = mod(px, nx)
-        py = mod(py, ny)
-
-        i   = trunc(Int32, px)
-        dpx = px - i
-        j   = trunc(Int32, py)
+        i  = trunc(Int32, px)
+        j  = trunc(Int32, py)
+        dpx = px - i                                                       
         dpy = py - j
 
         weight = particles.w
@@ -186,22 +187,28 @@ function calcul_rho_m6!( fields  :: MeshFields, particles :: Particles)
     dx = fields.mesh.dx
     dy = fields.mesh.dy
 
+    xmin, xmax = fields.mesh.xmax, fields.mesh.xmin
+    ymin, ymax = fields.mesh.ymax, fields.mesh.ymin
     dimx = fields.mesh.xmax - fields.mesh.xmin
     dimy = fields.mesh.ymax - fields.mesh.ymin
 
     for k = 1:particles.nbpart
     
-        px = particles.x[1,k]/dx
-        py = particles.x[2,k]/dy
+        xt1 = mod( particles.x[1,k] - xmin , dimx)
+        xt2 = mod( particles.x[2,k] - ymin , dimy)                                      
 
-        px = mod(px, nx)
-        py = mod(py, ny)
+        particles.x[1,k] = xt1 + xmin
+        particles.x[2,k] = xt2 + ymin                                                
+                                                                                
+        px = xt1/dx
+        py = xt2/dy
+                                                                                
+        i = trunc(Int32, px)                                                       
+        j = trunc(Int32, py)                                                       
 
-        i   = trunc(Int32, px)
         dpx = px - i
-        j   = trunc(Int32, py)
         dpy = py - j
-
+                                                                                
         weight = particles.w
       
         im3 = mod(i-3,nx)+1
