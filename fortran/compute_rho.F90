@@ -19,7 +19,7 @@ integer, private :: nx
 integer, private :: ny
 real(8), private :: weight
 real(8), private :: rho_total
-integer, private :: ix, jy, k
+integer, private :: i, j, k
 real(8), private :: dimx
 real(8), private :: dimy
 
@@ -92,28 +92,28 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
         px = modulo(px, real(nx,8))
         py = modulo(py, real(ny,8))
 
-        ix  = floor(px)
-        dpx = px - real(ix,kind=8)
-        jy  = floor(py)
-        dpy = py - real(jy,kind=8)
+        i   = floor(px)
+        dpx = px - real(i ,kind=8)
+        j   = floor(py)
+        dpy = py - real(j ,kind=8)
 
         weight = particles%w
       
-        im3 = modulo(ix-3,nx)+1
-        im2 = modulo(ix-2,nx)+1
-        im1 = modulo(ix-1,nx)+1
-        ip1 = modulo(ix+1,nx)+1
-        ip2 = modulo(ix+2,nx)+1
-        ip3 = modulo(ix+3,nx)+1
-        jm3 = modulo(jy-3,ny)+1
-        jm2 = modulo(jy-2,ny)+1
-        jm1 = modulo(jy-1,ny)+1
-        jp1 = modulo(jy+1,ny)+1
-        jp2 = modulo(jy+2,ny)+1
-        jp3 = modulo(jy+3,ny)+1
+        im3 = modulo(i -3,nx)+1
+        im2 = modulo(i -2,nx)+1
+        im1 = modulo(i -1,nx)+1
+        ip1 = modulo(i +1,nx)+1
+        ip2 = modulo(i +2,nx)+1
+        ip3 = modulo(i +3,nx)+1
+        jm3 = modulo(j -3,ny)+1
+        jm2 = modulo(j -2,ny)+1
+        jm1 = modulo(j -1,ny)+1
+        jp1 = modulo(j +1,ny)+1
+        jp2 = modulo(j +2,ny)+1
+        jp3 = modulo(j +3,ny)+1
 
-        ix = ix+1
-        jy = jy+1
+        i  = i +1
+        j  = j +1
       
         cm3x = f_m6(3+dpx)
         cp3x = f_m6(3-dpx)
@@ -133,7 +133,7 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
         fields%rho(im3,jm3) = fields%rho(im3,jm3) + cm3x * cm3y * weight
         fields%rho(im3,jm2) = fields%rho(im3,jm2) + cm3x * cm2y * weight
         fields%rho(im3,jm1) = fields%rho(im3,jm1) + cm3x * cm1y * weight
-        fields%rho(im3,jy ) = fields%rho(im3,jy ) + cm3x * cy   * weight
+        fields%rho(im3,j  ) = fields%rho(im3,j  ) + cm3x * cy   * weight
         fields%rho(im3,jp1) = fields%rho(im3,jp1) + cm3x * cp1y * weight
         fields%rho(im3,jp2) = fields%rho(im3,jp2) + cm3x * cp2y * weight
         fields%rho(im3,jp3) = fields%rho(im3,jp3) + cm3x * cp3y * weight
@@ -141,7 +141,7 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
         fields%rho(im2,jm3) = fields%rho(im2,jm3) + cm2x * cm3y * weight
         fields%rho(im2,jm2) = fields%rho(im2,jm2) + cm2x * cm2y * weight
         fields%rho(im2,jm1) = fields%rho(im2,jm1) + cm2x * cm1y * weight
-        fields%rho(im2,jy ) = fields%rho(im2,jy ) + cm2x * cy   * weight
+        fields%rho(im2,j  ) = fields%rho(im2,j  ) + cm2x * cy   * weight
         fields%rho(im2,jp1) = fields%rho(im2,jp1) + cm2x * cp1y * weight
         fields%rho(im2,jp2) = fields%rho(im2,jp2) + cm2x * cp2y * weight
         fields%rho(im2,jp3) = fields%rho(im2,jp3) + cm2x * cp3y * weight
@@ -149,23 +149,23 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
         fields%rho(im1,jm3) = fields%rho(im1,jm3) + cm1x * cm3y * weight
         fields%rho(im1,jm2) = fields%rho(im1,jm2) + cm1x * cm2y * weight
         fields%rho(im1,jm1) = fields%rho(im1,jm1) + cm1x * cm1y * weight
-        fields%rho(im1,jy ) = fields%rho(im1,jy ) + cm1x * cy   * weight
+        fields%rho(im1,j  ) = fields%rho(im1,j  ) + cm1x * cy   * weight
         fields%rho(im1,jp1) = fields%rho(im1,jp1) + cm1x * cp1y * weight
         fields%rho(im1,jp2) = fields%rho(im1,jp2) + cm1x * cp2y * weight
         fields%rho(im1,jp3) = fields%rho(im1,jp3) + cm1x * cp3y * weight
                                                    
-        fields%rho(ix ,jm3) = fields%rho(ix ,jm3) + cx   * cm3y * weight
-        fields%rho(ix ,jm2) = fields%rho(ix ,jm2) + cx   * cm2y * weight
-        fields%rho(ix ,jm1) = fields%rho(ix ,jm1) + cx   * cm1y * weight
-        fields%rho(ix ,jy ) = fields%rho(ix ,jy ) + cx   * cy   * weight
-        fields%rho(ix ,jp1) = fields%rho(ix ,jp1) + cx   * cp1y * weight
-        fields%rho(ix ,jp2) = fields%rho(ix ,jp2) + cx   * cp2y * weight
-        fields%rho(ix ,jp3) = fields%rho(ix ,jp3) + cx   * cp3y * weight
+        fields%rho(i  ,jm3) = fields%rho(i  ,jm3) + cx   * cm3y * weight
+        fields%rho(i  ,jm2) = fields%rho(i  ,jm2) + cx   * cm2y * weight
+        fields%rho(i  ,jm1) = fields%rho(i  ,jm1) + cx   * cm1y * weight
+        fields%rho(i  ,j  ) = fields%rho(i  ,j  ) + cx   * cy   * weight
+        fields%rho(i  ,jp1) = fields%rho(i  ,jp1) + cx   * cp1y * weight
+        fields%rho(i  ,jp2) = fields%rho(i  ,jp2) + cx   * cp2y * weight
+        fields%rho(i  ,jp3) = fields%rho(i  ,jp3) + cx   * cp3y * weight
                                                    
         fields%rho(ip1,jm3) = fields%rho(ip1,jm3) + cp1x * cm3y * weight
         fields%rho(ip1,jm2) = fields%rho(ip1,jm2) + cp1x * cm2y * weight
         fields%rho(ip1,jm1) = fields%rho(ip1,jm1) + cp1x * cm1y * weight
-        fields%rho(ip1,jy ) = fields%rho(ip1,jy ) + cp1x * cy   * weight
+        fields%rho(ip1,j  ) = fields%rho(ip1,j  ) + cp1x * cy   * weight
         fields%rho(ip1,jp1) = fields%rho(ip1,jp1) + cp1x * cp1y * weight
         fields%rho(ip1,jp2) = fields%rho(ip1,jp2) + cp1x * cp2y * weight
         fields%rho(ip1,jp3) = fields%rho(ip1,jp3) + cp1x * cp3y * weight
@@ -173,7 +173,7 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
         fields%rho(ip2,jm3) = fields%rho(ip2,jm3) + cp2x * cm3y * weight
         fields%rho(ip2,jm2) = fields%rho(ip2,jm2) + cp2x * cm2y * weight
         fields%rho(ip2,jm1) = fields%rho(ip2,jm1) + cp2x * cm1y * weight
-        fields%rho(ip2,jy ) = fields%rho(ip2,jy ) + cp2x * cy   * weight
+        fields%rho(ip2,j  ) = fields%rho(ip2,j  ) + cp2x * cy   * weight
         fields%rho(ip2,jp1) = fields%rho(ip2,jp1) + cp2x * cp1y * weight
         fields%rho(ip2,jp2) = fields%rho(ip2,jp2) + cp2x * cp2y * weight
         fields%rho(ip2,jp3) = fields%rho(ip2,jp3) + cp2x * cp3y * weight
@@ -181,7 +181,7 @@ subroutine compute_rho_m6_complex( fields, particles, xt, ua )
         fields%rho(ip3,jm3) = fields%rho(ip3,jm3) + cp3x * cm3y * weight
         fields%rho(ip3,jm2) = fields%rho(ip3,jm2) + cp3x * cm2y * weight
         fields%rho(ip3,jm1) = fields%rho(ip3,jm1) + cp3x * cm1y * weight
-        fields%rho(ip3,jy ) = fields%rho(ip3,jy ) + cp3x * cy   * weight
+        fields%rho(ip3,j  ) = fields%rho(ip3,j  ) + cp3x * cy   * weight
         fields%rho(ip3,jp1) = fields%rho(ip3,jp1) + cp3x * cp1y * weight
         fields%rho(ip3,jp2) = fields%rho(ip3,jp2) + cp3x * cp2y * weight
         fields%rho(ip3,jp3) = fields%rho(ip3,jp3) + cp3x * cp3y * weight
@@ -226,28 +226,28 @@ subroutine compute_rho_m6_real( fields, particles)
         px = modulo(px, real(nx,8))
         py = modulo(py, real(ny,8))
 
-        ix  = floor(px)
-        dpx = px - real(ix, kind=8)
-        jy  = floor(py)
-        dpy = py - real(jy, kind=8)
+        i   = floor(px)
+        dpx = px - real(i , kind=8)
+        j   = floor(py)
+        dpy = py - real(j , kind=8)
 
         weight = particles%w
       
-        im3 = modulo(ix-3,nx)+1
-        im2 = modulo(ix-2,nx)+1
-        im1 = modulo(ix-1,nx)+1
-        ip1 = modulo(ix+1,nx)+1
-        ip2 = modulo(ix+2,nx)+1
-        ip3 = modulo(ix+3,nx)+1
-        jm3 = modulo(jy-3,ny)+1
-        jm2 = modulo(jy-2,ny)+1
-        jm1 = modulo(jy-1,ny)+1
-        jp1 = modulo(jy+1,ny)+1
-        jp2 = modulo(jy+2,ny)+1
-        jp3 = modulo(jy+3,ny)+1
+        im3 = modulo(i -3,nx)+1
+        im2 = modulo(i -2,nx)+1
+        im1 = modulo(i -1,nx)+1
+        ip1 = modulo(i +1,nx)+1
+        ip2 = modulo(i +2,nx)+1
+        ip3 = modulo(i +3,nx)+1
+        jm3 = modulo(j -3,ny)+1
+        jm2 = modulo(j -2,ny)+1
+        jm1 = modulo(j -1,ny)+1
+        jp1 = modulo(j +1,ny)+1
+        jp2 = modulo(j +2,ny)+1
+        jp3 = modulo(j +3,ny)+1
 
-        ix = ix+1
-        jy = jy+1
+        i  = i+1
+        j  = j+1
       
         cm3x = f_m6(3+dpx)
         cp3x = f_m6(3-dpx)
@@ -267,7 +267,7 @@ subroutine compute_rho_m6_real( fields, particles)
         fields%rho(im3,jm3) = fields%rho(im3,jm3)+cm3x * cm3y * weight
         fields%rho(im3,jm2) = fields%rho(im3,jm2)+cm3x * cm2y * weight
         fields%rho(im3,jm1) = fields%rho(im3,jm1)+cm3x * cm1y * weight
-        fields%rho(im3,jy ) = fields%rho(im3,jy )+cm3x * cy   * weight
+        fields%rho(im3,j  ) = fields%rho(im3,j  )+cm3x * cy   * weight
         fields%rho(im3,jp1) = fields%rho(im3,jp1)+cm3x * cp1y * weight
         fields%rho(im3,jp2) = fields%rho(im3,jp2)+cm3x * cp2y * weight
         fields%rho(im3,jp3) = fields%rho(im3,jp3)+cm3x * cp3y * weight
@@ -275,7 +275,7 @@ subroutine compute_rho_m6_real( fields, particles)
         fields%rho(im2,jm3) = fields%rho(im2,jm3)+cm2x * cm3y * weight
         fields%rho(im2,jm2) = fields%rho(im2,jm2)+cm2x * cm2y * weight
         fields%rho(im2,jm1) = fields%rho(im2,jm1)+cm2x * cm1y * weight
-        fields%rho(im2,jy ) = fields%rho(im2,jy )+cm2x * cy   * weight
+        fields%rho(im2,j  ) = fields%rho(im2,j  )+cm2x * cy   * weight
         fields%rho(im2,jp1) = fields%rho(im2,jp1)+cm2x * cp1y * weight
         fields%rho(im2,jp2) = fields%rho(im2,jp2)+cm2x * cp2y * weight
         fields%rho(im2,jp3) = fields%rho(im2,jp3)+cm2x * cp3y * weight
@@ -283,23 +283,23 @@ subroutine compute_rho_m6_real( fields, particles)
         fields%rho(im1,jm3) = fields%rho(im1,jm3)+cm1x * cm3y * weight
         fields%rho(im1,jm2) = fields%rho(im1,jm2)+cm1x * cm2y * weight
         fields%rho(im1,jm1) = fields%rho(im1,jm1)+cm1x * cm1y * weight
-        fields%rho(im1,jy ) = fields%rho(im1,jy )+cm1x * cy   * weight
+        fields%rho(im1,j  ) = fields%rho(im1,j  )+cm1x * cy   * weight
         fields%rho(im1,jp1) = fields%rho(im1,jp1)+cm1x * cp1y * weight
         fields%rho(im1,jp2) = fields%rho(im1,jp2)+cm1x * cp2y * weight
         fields%rho(im1,jp3) = fields%rho(im1,jp3)+cm1x * cp3y * weight
 
-        fields%rho(ix ,jm3) = fields%rho(ix ,jm3)+cx   * cm3y * weight
-        fields%rho(ix ,jm2) = fields%rho(ix ,jm2)+cx   * cm2y * weight
-        fields%rho(ix ,jm1) = fields%rho(ix ,jm1)+cx   * cm1y * weight
-        fields%rho(ix ,jy ) = fields%rho(ix ,jy )+cx   * cy   * weight
-        fields%rho(ix ,jp1) = fields%rho(ix ,jp1)+cx   * cp1y * weight
-        fields%rho(ix ,jp2) = fields%rho(ix ,jp2)+cx   * cp2y * weight
-        fields%rho(ix ,jp3) = fields%rho(ix ,jp3)+cx   * cp3y * weight
+        fields%rho(i  ,jm3) = fields%rho(i  ,jm3)+cx   * cm3y * weight
+        fields%rho(i  ,jm2) = fields%rho(i  ,jm2)+cx   * cm2y * weight
+        fields%rho(i  ,jm1) = fields%rho(i  ,jm1)+cx   * cm1y * weight
+        fields%rho(i  ,j  ) = fields%rho(i  ,j  )+cx   * cy   * weight
+        fields%rho(i  ,jp1) = fields%rho(i  ,jp1)+cx   * cp1y * weight
+        fields%rho(i  ,jp2) = fields%rho(i  ,jp2)+cx   * cp2y * weight
+        fields%rho(i  ,jp3) = fields%rho(i  ,jp3)+cx   * cp3y * weight
 
         fields%rho(ip1,jm3) = fields%rho(ip1,jm3)+cp1x * cm3y * weight
         fields%rho(ip1,jm2) = fields%rho(ip1,jm2)+cp1x * cm2y * weight
         fields%rho(ip1,jm1) = fields%rho(ip1,jm1)+cp1x * cm1y * weight
-        fields%rho(ip1,jy ) = fields%rho(ip1,jy )+cp1x * cy   * weight
+        fields%rho(ip1,j  ) = fields%rho(ip1,j  )+cp1x * cy   * weight
         fields%rho(ip1,jp1) = fields%rho(ip1,jp1)+cp1x * cp1y * weight
         fields%rho(ip1,jp2) = fields%rho(ip1,jp2)+cp1x * cp2y * weight
         fields%rho(ip1,jp3) = fields%rho(ip1,jp3)+cp1x * cp3y * weight
@@ -307,7 +307,7 @@ subroutine compute_rho_m6_real( fields, particles)
         fields%rho(ip2,jm3) = fields%rho(ip2,jm3)+cp2x * cm3y * weight
         fields%rho(ip2,jm2) = fields%rho(ip2,jm2)+cp2x * cm2y * weight
         fields%rho(ip2,jm1) = fields%rho(ip2,jm1)+cp2x * cm1y * weight
-        fields%rho(ip2,jy ) = fields%rho(ip2,jy )+cp2x * cy   * weight
+        fields%rho(ip2,j  ) = fields%rho(ip2,j  )+cp2x * cy   * weight
         fields%rho(ip2,jp1) = fields%rho(ip2,jp1)+cp2x * cp1y * weight
         fields%rho(ip2,jp2) = fields%rho(ip2,jp2)+cp2x * cp2y * weight
         fields%rho(ip2,jp3) = fields%rho(ip2,jp3)+cp2x * cp3y * weight
@@ -315,7 +315,7 @@ subroutine compute_rho_m6_real( fields, particles)
         fields%rho(ip3,jm3) = fields%rho(ip3,jm3)+cp3x * cm3y * weight
         fields%rho(ip3,jm2) = fields%rho(ip3,jm2)+cp3x * cm2y * weight
         fields%rho(ip3,jm1) = fields%rho(ip3,jm1)+cp3x * cm1y * weight
-        fields%rho(ip3,jy ) = fields%rho(ip3,jy )+cp3x * cy   * weight
+        fields%rho(ip3,j  ) = fields%rho(ip3,j  )+cp3x * cy   * weight
         fields%rho(ip3,jp1) = fields%rho(ip3,jp1)+cp3x * cp1y * weight
         fields%rho(ip3,jp2) = fields%rho(ip3,jp2)+cp3x * cp2y * weight
         fields%rho(ip3,jp3) = fields%rho(ip3,jp3)+cp3x * cp3y * weight

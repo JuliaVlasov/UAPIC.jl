@@ -9,3 +9,4 @@ Manifest.toml
 *.o
 *.mod
 fortran/uapic2d
+fortran/efd
