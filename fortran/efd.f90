@@ -321,15 +321,7 @@ do m=1,nbpart
     do istep = 1, nstep
 
         !---imex2 New---
-        do n=1,ntau
-            Et(1,n)=(0.5d0*cos(real(xt(1,n))/2.d0)*sin(real(xt(2,n))))*(1.d0+0.5d0*sin(time))
-            Et(2,n)=(cos(real(xt(2,n)))*sin(real(xt(1,n))/2.d0))*(1.d0+0.5d0*sin(time))
-            interv=(1.d0+0.5d0*sin(real(xt(1,n)))*sin(real(xt(2,n)))-bx)/bx/ep
-            temp(1,n)=(cos(tau(n))*Et(1,n)-sin(tau(n))*Et(2,n))/bx
-            temp(2,n)=(cos(tau(n))*Et(2,n)+sin(tau(n))*Et(1,n))/bx
-            fy(1,n)=temp(1,n)+interv*yt(2,n)
-            fy(2,n)=temp(2,n)-interv*yt(1,n)
-        end do
+        call compute_fy( xt, yt)
         fytemp0=yt+ds/2.d0*fy
         call fft( fytemp0(1,:), fy(1,:))
         call fft( fytemp0(2,:), fy(2,:))
@@ -351,15 +343,9 @@ do m=1,nbpart
         call ifft( fx(1,:), tildex(1,:))!xt(tn+1/2)
         call ifft( fx(2,:), tildex(2,:))
         time=time+dt/2.d0
-        do n=1,ntau
-            Et(1,n)=(0.5d0*cos(real(tildex(1,n))/2.d0)*sin(real(tildex(2,n))))*(1.d0+0.5d0*sin(time))
-            Et(2,n)=(cos(real(tildex(2,n)))*sin(real(tildex(1,n))/2.d0))*(1.d0+0.5d0*sin(time))
-            interv=(1.d0+0.5d0*sin(real(tildex(1,n)))*sin(real(tildex(2,n)))-bx)/bx/ep
-            temp(1,n)=(cos(tau(n))*Et(1,n)-sin(tau(n))*Et(2,n))/bx
-            temp(2,n)=(cos(tau(n))*Et(2,n)+sin(tau(n))*Et(1,n))/bx
-            fy(1,n)=temp(1,n)+interv*tildey(2,n)
-            fy(2,n)=temp(2,n)-interv*tildey(1,n)
-        end do
+
+        call compute_fy( tildex, tildey)
+
         call fft( fy(1,:), fytemp0(1,:))
         call fft( fy(2,:), fytemp0(2,:))
         call fft( yt(1,:), tildey(1,:))
@@ -434,6 +420,24 @@ close(851)
 !close(851)
 
 contains
+
+
+subroutine compute_fy( xt, yt )
+
+    complex(8) :: xt(:,:)
+    complex(8) :: yt(:,:)
+
+    do n=1,ntau
+        Et(1,n)=(0.5d0*cos(real(xt(1,n))/2.d0)*sin(real(xt(2,n))))*(1.d0+0.5d0*sin(time))
+        Et(2,n)=(cos(real(xt(2,n)))*sin(real(xt(1,n))/2.d0))*(1.d0+0.5d0*sin(time))
+        interv=(1.d0+0.5d0*sin(real(xt(1,n)))*sin(real(xt(2,n)))-bx)/bx/ep
+        temp(1,n)=(cos(tau(n))*Et(1,n)-sin(tau(n))*Et(2,n))/bx
+        temp(2,n)=(cos(tau(n))*Et(2,n)+sin(tau(n))*Et(1,n))/bx
+        fy(1,n)=temp(1,n)+interv*yt(2,n)
+        fy(2,n)=temp(2,n)-interv*yt(1,n)
+    end do
+
+end subroutine compute_fy
 
 subroutine fft( source, destination)
 
