@@ -168,9 +168,9 @@ do m=1,nbpart
     end do
     call fft(r(1,:), tilde(1,:))
     call fft(r(2,:), tilde(2,:))
-    ave=tilde(:,0)/ntau/ep!dot{Y}_underline^0th
+    ave=tilde(:,0)/ep!dot{Y}_underline^0th
     do n=1,ntau-1
-        tilde(:,n)=-im*tilde(:,n)/ltau(n)/ntau
+        tilde(:,n)=-im*tilde(:,n)/ltau(n)
     end do
     tilde(:,0)=0.0d0
     call ifft( tilde(1,:), r(1,:))
@@ -189,7 +189,7 @@ do m=1,nbpart
     call fft(temp(1,:), tilde(1,:))
     call fft(temp(2,:), tilde(2,:))
     do n=1,ntau-1
-        tilde(:,n)=-im*tilde(:,n)/ltau(n)/ntau
+        tilde(:,n)=-im*tilde(:,n)/ltau(n)
     end do
     tilde(:,0)=0.0d0
     call ifft(tilde(1,:), h(1,:))
@@ -218,8 +218,8 @@ do m=1,nbpart
     call fft(temp(1,:), tilde(1,:))
     call fft(temp(2,:), tilde(2,:))
     do n=1,ntau-1
-        fx(:,n)=-im*tilde(:,n)/ltau(n)/ntau
-        tilde(:,n)=-tilde(:,n)/ltau(n)**2/ntau
+        fx(:,n)=-im*tilde(:,n)/ltau(n)
+        tilde(:,n)=-tilde(:,n)/ltau(n)**2
     end do
     fx(:,0)=0.0d0
     tilde(:,0)=0.0d0
@@ -245,9 +245,9 @@ do m=1,nbpart
     end do
     call fft( temp(1,:), tilde(1,:))
     call fft( temp(2,:), tilde(2,:))
-    tildex(:,0)=tilde(:,0)/ntau/ep!dot{Y_underline}
+    tildex(:,0)=tilde(:,0)/ep!dot{Y_underline}
     do n=1,ntau-1
-        tilde(:,n)=-im*tilde(:,n)/ltau(n)/ntau
+        tilde(:,n)=-im*tilde(:,n)/ltau(n)
     end do
     tilde(:,0)=0.0d0
     call ifft(tilde(1,:), temp(1,:))
@@ -263,7 +263,7 @@ do m=1,nbpart
     end do
     call fft( temp(1,:), tilde(1,:))
     call fft( temp(2,:), tilde(2,:))
-    temp(:,0)=tilde(:,0)/ntau
+    temp(:,0)=tilde(:,0)
     ave3=temp(:,0)!dot{X_underline}!!!
     interv=cos(auxpx(1,m))*sin(auxpx(2,m))*temp(1,0)+sin(auxpx(1,m))*cos(auxpx(2,m))*temp(2,0)
     fx(1,0)=interv/ep/bx*p%v(2,m)/2.d0
@@ -272,8 +272,8 @@ do m=1,nbpart
         temp(1,n)=(1.d0+0.5d0*sin(real(xt(1,n)))*sin(real(xt(2,n)))-bx)/bx
     end do
     call fft(temp(1,:), tilde(1,:))
-    fx(1,0)=fx(1,0)+tilde(1,0)/ntau/ep*ave(2)
-    fx(2,0)=fx(2,0)-tilde(1,0)/ntau/ep*ave(1)!ddot{Y}_underline^0th!!!!
+    fx(1,0)=fx(1,0)+tilde(1,0)/ep*ave(2)
+    fx(2,0)=fx(2,0)-tilde(1,0)/ep*ave(1)!ddot{Y}_underline^0th!!!!
     do n=0,ntau-1
         tildey(:,n)=tildex(:,0)+fy(:,n)
         temp(1,n)=(cos(tau(n))*tildey(1,n)+sin(tau(n))*tildey(2,n))
@@ -282,7 +282,7 @@ do m=1,nbpart
     call fft( temp(1,:), tilde(1,:))
     call fft( temp(2,:), tilde(2,:))
     do n=1,ntau-1
-        tilde(:,n)=-im*tilde(:,n)/ltau(n)/ntau
+        tilde(:,n)=-im*tilde(:,n)/ltau(n)
     end do
     tilde(:,0)=0.0d0
     call ifft( tilde(1,:), temp(1,:))
@@ -294,7 +294,7 @@ do m=1,nbpart
     call fft( fy(1,:), tilde(1,:))
     call fft( fy(2,:), tilde(2,:))
     do n=1,ntau-1
-        tilde(:,n)=-im*tilde(:,n)/ltau(n)/ntau
+        tilde(:,n)=-im*tilde(:,n)/ltau(n)
     end do
     tilde(:,0)=0.0d0
     call ifft( tilde(1,:), temp(1,:))
@@ -307,7 +307,7 @@ do m=1,nbpart
     call fft( temp(1,:), tilde(1,:))
     call fft( temp(2,:), tilde(2,:))
     do n=1,ntau-1
-        tilde(:,n)=-im*tilde(:,n)/ltau(n)/ntau
+        tilde(:,n)=-im*tilde(:,n)/ltau(n)
     end do
     tilde(:,0)=0.0d0
     call ifft( tilde(1,:), temp(1,:))
@@ -334,7 +334,7 @@ do m=1,nbpart
         call fft( fytemp0(1,:), fy(1,:))
         call fft( fytemp0(2,:), fy(2,:))
         do n=0,ntau-1
-            fy(:,n)=fy(:,n)/(1.0d0+im*ds/2.d0*ltau(n)/ep)/ntau
+            fy(:,n)=fy(:,n)/(1.0d0+im*ds/2.d0*ltau(n)/ep)
         end do
         call ifft( fy(1,:), tildey(1,:))!yt(tn+1/2)
         call ifft( fy(2,:), tildey(2,:))
@@ -346,7 +346,7 @@ do m=1,nbpart
         call fft( fxtemp0(1,:), fx(1,:))
         call fft( fxtemp0(2,:), fx(2,:))
         do n=0,ntau-1
-            fx(:,n)=fx(:,n)/(1.0d0+im*ds/2.d0*ltau(n)/ep)/ntau
+            fx(:,n)=fx(:,n)/(1.0d0+im*ds/2.d0*ltau(n)/ep)
         end do
         call ifft( fx(1,:), tildex(1,:))!xt(tn+1/2)
         call ifft( fx(2,:), tildex(2,:))
@@ -366,7 +366,7 @@ do m=1,nbpart
         call fft( yt(2,:), tildey(2,:))
         do n=0,ntau-1
             fy(:,n)=(tildey(:,n)*(1.0d0-im*ds/ep/2.0d0*ltau(n)) &
-&            +ds*fytemp0(:,n))/(1.0d0+im*ds/2.0d0*ltau(n)/ep)/ntau
+&            +ds*fytemp0(:,n))/(1.0d0+im*ds/2.0d0*ltau(n)/ep)
         end do
         tildey=yt
         call ifft( fy(1,:), yt(1,:))!yt(tn+1)
@@ -382,7 +382,7 @@ do m=1,nbpart
         call fft( xt(2,:), tildex(2,:))
         do n=0,ntau-1
             fx(:,n)=(tildex(:,n)*(1.0d0-im*ds/ep/2.0d0*ltau(n)) &
-        &       +ds*fxtemp0(:,n))/(1.0d0+im*ds/2.0d0*ltau(n)/ep)/ntau
+        &       +ds*fxtemp0(:,n))/(1.0d0+im*ds/2.0d0*ltau(n)/ep)
         end do
         call ifft( fx(1,:), xt(1,:))!xt(tn+1)
         call ifft( fx(2,:), xt(2,:))
@@ -394,7 +394,7 @@ do m=1,nbpart
     call fft( xt(2,:),tilde(2,:))
     temp(:,1)=0.d0
     do n=0,ntau-1
-        temp(:,1)=temp(:,1)+tilde(:,n)/ntau*exp(im*ltau(n)*tfinal*bx/ep)
+        temp(:,1)=temp(:,1)+tilde(:,n)*exp(im*ltau(n)*tfinal*bx/ep)
     end do
     xxt=real(temp(:,1))
     call apply_bc()
@@ -404,7 +404,7 @@ do m=1,nbpart
     call fft(yt(2,:),tilde(2,:))
     temp(:,1)=0.d0
     do n=0,ntau-1
-        temp(:,1)=temp(:,1)+tilde(:,n)/ntau*exp(im*ltau(n)*tfinal*bx/ep)
+        temp(:,1)=temp(:,1)+tilde(:,n)*exp(im*ltau(n)*tfinal*bx/ep)
     end do
     p%v(1,m)=real(cos(tfinal*bx/ep)*temp(1,1)+sin(tfinal*bx/ep)*temp(2,1))
     p%v(2,m)=real(cos(tfinal*bx/ep)*temp(2,1)-sin(tfinal*bx/ep)*temp(1,1))
@@ -441,6 +441,8 @@ subroutine fft( source, destination)
     complex(8), intent(out)    :: destination(:)
 
     call fftw_execute_dft(plan_fw, source, destination)
+
+    destination = destination / ntau
 
 end subroutine fft
 
