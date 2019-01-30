@@ -7,8 +7,8 @@ OBJS =	compute_rho.o interpolation.o meshfields.o particles.o poisson.o \
 LIBS =	-lfftw3
 
 F90 = gfortran
-F90FLAGS = -I/usr/local/include -fstack-arrays -O0 -g -fbacktrace -pedantic -Wuninitialized -fcheck=array-temps,bounds,do,pointer,recursion -ffpe-trap=invalid,zero,overflow
 F90FLAGS = -I/usr/local/include -O3
+F90FLAGS = -I/usr/local/include -fstack-arrays -O0 -g -fbacktrace -pedantic -Wuninitialized -fcheck=array-temps,bounds,do,pointer,recursion -ffpe-trap=invalid,zero,overflow
 LDFLAGS = $(F90FLAGS)  
 
 all: bupdate efd
