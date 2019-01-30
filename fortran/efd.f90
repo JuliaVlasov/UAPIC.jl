@@ -33,12 +33,10 @@ real(8)    :: ave3(2)
 
 complex(8) :: pl(       ntau)
 complex(8) :: ql(       ntau)
-complex(8) :: tildex( ntau,2)
-complex(8) :: tildey( ntau,2)
-complex(8) :: fxtemp1(ntau,2)
-complex(8) :: fxtemp0(ntau,2)
-complex(8) :: fytemp1(ntau,2)
-complex(8) :: fytemp0(ntau,2)
+complex(8) :: xf( ntau,2)
+complex(8) :: yf( ntau,2)
+complex(8) :: gx(ntau,2)
+complex(8) :: gy(ntau,2)
 complex(8) :: temp(   ntau,2)
 complex(8) :: tilde(  ntau,2)
 complex(8) :: h(      ntau,2)
@@ -163,7 +161,6 @@ do m=1,nbpart
     xt(:,1)=x1+h(:,1)-h(1,1)
     xt(:,2)=x2+h(:,2)-h(1,2)!xt1st
 
-
     p%e(1,m)=(0.5d0*cos(x1/2.d0)*sin(x2))*(1.d0+0.5d0*sin(time))
     p%e(2,m)=(sin(x1/2.d0)*cos(x2))*(1.d0+0.5d0*sin(time))
     do n=1,ntau
@@ -171,77 +168,111 @@ do m=1,nbpart
         r(n,1) =  interv*v2
         r(n,2) = -interv*v1
     end do
+
     call fft(r, tilde)
     ave = tilde(1,:)/ep!dot{Y}_underline^0th
     do n=2,ntau
         tilde(n,:)=-im*tilde(n,:)/ltau(n)
     end do
+
     tilde(1,:)=0.0d0
     call ifft( tilde, r)
+
     do n=1,ntau
         r(n,1)=ep*(sin(tau(n))*p%e(1,m)+cos(tau(n))*p%e(2,m))/bx+r(n,1)
         r(n,2)=ep*(sin(tau(n))*p%e(2,m)-cos(tau(n))*p%e(1,m))/bx+r(n,2)
     end do
+
     yt(:,1)=v1+(r(:,1)-r(1,1))
     yt(:,2)=v2+(r(:,2)-r(1,2))!yt1st
     !--more preparation--
+
     do n=1,ntau
         temp(n,1)=ep*(cos(tau(n))*yt(n,1)+sin(tau(n))*yt(n,2))/bx
         temp(n,2)=ep*(cos(tau(n))*yt(n,2)-sin(tau(n))*yt(n,1))/bx
     end do
+
     call fft(temp, tilde)
+
     do n=2,ntau
         tilde(n,:)=-im*tilde(n,:)/ltau(n)
     end do
+
     tilde(1,:)=0.0d0
     call ifft(tilde, h)
+
     do n=1,ntau
         h(n,1)=h(n,1)-ep**2/bx*(-cos(tau(n))*ave(1)-sin(tau(n))*ave(2))
         h(n,2)=h(n,2)-ep**2/bx*(-cos(tau(n))*ave(2)+sin(tau(n))*ave(1))!h2nd
     end do
+
     xt(:,1)=x1+h(:,1)-h(1,1)
     xt(:,2)=x2+h(:,2)-h(1,2)!x2nd,residue O(eps^3)
+
     p%e(1,m)=(0.5d0*cos(x1/2.d0)*sin(x2))*0.5d0*cos(time)
     p%e(2,m)=(sin(x1/2.d0)*cos(x2))*0.5d0*cos(time)!partial_tE
+
     do n=1,ntau
+
         interv=(1.d0+0.5d0*sin(real(xt(n,1)))*sin(real(xt(n,2)))-bx)/bx
+
         fx(n,1)=interv*ave(2)
         fx(n,2)=-interv*ave(1)
+
         fy(n,1)=ep/bx*(sin(tau(n))*ave(1)-cos(tau(n))*ave(2))
         fy(n,2)=ep/bx*(cos(tau(n))*ave(1)+sin(tau(n))*ave(2))!partial_sh^1st
+
         interv=cos(x1)*sin(x2)*fy(n,1)+sin(x1)*cos(x2)*fy(n,2)
+
         fy(n,1)=interv/bx/2.d0*v2+fx(n,1)
         fy(n,2)=-interv/bx/2.d0*v1+fx(n,2)
+
         fx(n,1)=ep/bx**2*(-sin(tau(n))*p%e(2,m)+cos(tau(n))*p%e(1,m))
         fx(n,2)=ep/bx**2*(sin(tau(n))*p%e(1,m)+cos(tau(n))*p%e(2,m))
+
     end do
+
     temp=fy+fx
+
     call fft(temp, tilde)
+
     do n=2,ntau
         fx(n,:)=-im*tilde(n,:)/ltau(n)
         tilde(n,:)=-tilde(n,:)/ltau(n)**2
     end do
+
     fx(1,:)    = 0.0d0
     tilde(1,:) = 0.0d0
+
     call ifft(tilde, temp)
+
     r = - ep * temp
+
     call ifft(fx, fy)
-    fxtemp0=fy!partial_sr^1st!!!
+
+    gx=fy!partial_sr^1st!!!
     do n=1,ntau
         tilde(n,1)=(cos(tau(n))*fy(n,1)+sin(tau(n))*fy(n,2))/bx
         tilde(n,2)=(cos(tau(n))*fy(n,2)-sin(tau(n))*fy(n,1))/bx
     end do
+
     call fft(tilde, temp)
+
     ave2=temp(1,:)/ntau!ddot{X_underline}!!!!
     do n=1,ntau
+
         p%e(1,m)=(0.5d0*cos(real(xt(n,1))/2.d0)*sin(real(xt(n,2))))*(1.d0+0.5d0*sin(time))
         p%e(2,m)=(sin(real(xt(n,1))/2.d0)*cos(real(xt(n,2))))*(1.d0+0.5d0*sin(time))
+
         interv=(1.d0+0.5d0*sin(real(xt(n,1)))*sin(real(xt(n,2)))-bx)/bx
+
         temp(n,1)=interv*yt(n,2)+ep/bx*(-sin(tau(n))*p%e(2,m)+cos(tau(n))*p%e(1,m))
         temp(n,2)=-interv*yt(n,1)+ep/bx*(sin(tau(n))*p%e(1,m)+cos(tau(n))*p%e(2,m))
     end do
+
     call fft( temp, tilde)
-    tildex(1,:)=tilde(1,:)/ep!dot{Y_underline}
+
+    xf(1,:)=tilde(1,:)/ep!dot{Y_underline}
     do n=2,ntau
         tilde(n,:)=-im*tilde(n,:)/ltau(n)
     end do
@@ -279,9 +310,9 @@ do m=1,nbpart
     fx(1,2)=fx(1,2)-tilde(1,1)/ep*ave(1)!ddot{Y}_underline^0th!!!!
 
     do n=1,ntau
-        tildey(n,:)=tildex(1,:)+fy(n,:)
-        temp(n,1)=(cos(tau(n))*tildey(n,1)+sin(tau(n))*tildey(n,2))
-        temp(n,2)=(cos(tau(n))*tildey(n,2)-sin(tau(n))*tildey(n,1))
+        yf(n,:)=xf(1,:)+fy(n,:)
+        temp(n,1)=(cos(tau(n))*yf(n,1)+sin(tau(n))*yf(n,2))
+        temp(n,2)=(cos(tau(n))*yf(n,2)-sin(tau(n))*yf(n,1))
     end do
 
     call fft( temp, tilde)
@@ -337,59 +368,59 @@ do m=1,nbpart
         !---imex2 New---
         call compute_fy( xt, yt)
 
-        fytemp0=yt+ds/2.d0*fy
+        gy=yt+ds/2.d0*fy
 
-        call fft( fytemp0, fy)
+        call fft( gy, fy)
 
         do n=1,ntau
             fy(n,:)=fy(n,:)/(1.0d0+im*ds/2.d0*ltau(n)/ep)
         end do
 
-        call ifft( fy, tildey)!yt(tn+1/2)
+        call ifft( fy, yf)!yt(tn+1/2)
 
         do n=1,ntau
-            fx(n,1)=(cos(tau(n))*tildey(n,1)+sin(tau(n))*tildey(n,2))/bx
-            fx(n,2)=(cos(tau(n))*tildey(n,2)-sin(tau(n))*tildey(n,1))/bx
+            fx(n,1)=(cos(tau(n))*yf(n,1)+sin(tau(n))*yf(n,2))/bx
+            fx(n,2)=(cos(tau(n))*yf(n,2)-sin(tau(n))*yf(n,1))/bx
         end do
 
-        fxtemp0 = xt + ds/2.d0 * fx
+        gx = xt + ds/2.d0 * fx
 
-        call fft( fxtemp0, fx)
+        call fft( gx, fx)
 
         do n=1,ntau
             fx(n,:)=fx(n,:)/(1.0d0+im*ds/2.d0*ltau(n)/ep)
         end do
 
-        call ifft( fx, tildex)!xt(tn+1/2)
+        call ifft( fx, xf)!xt(tn+1/2)
 
         time = time + dt/2.d0
 
-        call compute_fy( tildex, tildey)
+        call compute_fy( xf, yf)
 
-        call fft( fy, fytemp0)
-        call fft( yt, tildey)
+        call fft( fy, gy)
+        call fft( yt, yf)
 
         do n=1,ntau
-            fy(n,:)=(tildey(n,:)*(1.0d0-im*ds/ep/2.0d0*ltau(n)) &
-&            +ds*fytemp0(n,:))/(1.0d0+im*ds/2.0d0*ltau(n)/ep)
+            fy(n,:)=(yf(n,:)*(1.0d0-im*ds/ep/2.0d0*ltau(n)) &
+&            +ds*gy(n,:))/(1.0d0+im*ds/2.0d0*ltau(n)/ep)
         end do
 
-        tildey=yt
+        yf=yt
 
         call ifft( fy, yt)!yt(tn+1)
 
-        tildey=(yt+tildey)/2.d0
+        yf=(yt+yf)/2.d0
         do n=1,ntau
-            fx(n,1)=(cos(tau(n))*tildey(n,1)+sin(tau(n))*tildey(n,2))/bx
-            fx(n,2)=(cos(tau(n))*tildey(n,2)-sin(tau(n))*tildey(n,1))/bx
+            fx(n,1)=(cos(tau(n))*yf(n,1)+sin(tau(n))*yf(n,2))/bx
+            fx(n,2)=(cos(tau(n))*yf(n,2)-sin(tau(n))*yf(n,1))/bx
         end do
 
-        call fft( fx, fxtemp0)
-        call fft( xt, tildex)
+        call fft( fx, gx)
+        call fft( xt, xf)
 
         do n=1,ntau
-            fx(n,:)=(tildex(n,:)*(1.0d0-im*ds/ep/2.0d0*ltau(n)) &
-        &       +ds*fxtemp0(n,:))/(1.0d0+im*ds/2.0d0*ltau(n)/ep)
+            fx(n,:)=(xf(n,:)*(1.0d0-im*ds/ep/2.0d0*ltau(n)) &
+        &       +ds*gx(n,:))/(1.0d0+im*ds/2.0d0*ltau(n)/ep)
         end do
 
         call ifft( fx, xt)!xt(tn+1)
