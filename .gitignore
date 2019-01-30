@@ -11,3 +11,4 @@ Manifest.toml
 fortran/uapic2d
 fortran/efd
 fortran/bupdate
+fortran/*.dSYM/
