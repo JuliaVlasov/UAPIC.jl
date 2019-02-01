@@ -124,7 +124,9 @@ call init_particles( p, nbpart, mesh, alpha, kx )
 print"('ep = ', g15.3)", ep
 print"('dt = ', g15.3)", dt
 
-do m=1,nbpart
+print*, sum(p%x(1,:)), sum(p%x(2,:)), sum(p%v(1,:)), sum(p%v(2,:))
+
+do m=1,1!nbpart
     
     x1 = p%x(1,m)
     x2 = p%x(2,m)
@@ -142,7 +144,6 @@ do m=1,nbpart
         pl(i) = ep*im*(exp(-im*ltau(i)*ds/ep)-1.0d0)/ltau(i)
         ql(i) = ep*(ep*(1.0d0-exp(-im*ltau(i)*ds/ep))-im*ltau(i)*ds)/ltau(i)**2
     end do
-
 
     xt(:,1) = x1
     xt(:,2) = x2
@@ -163,14 +164,20 @@ do m=1,nbpart
 
     p%e(1,m)=(0.5d0*cos(x1/2.d0)*sin(x2))*(1.d0+0.5d0*sin(time))
     p%e(2,m)=(sin(x1/2.d0)*cos(x2))*(1.d0+0.5d0*sin(time))
+
     do n=1,ntau
         interv=(1.d0+0.5d0*sin(real(xt(n,1)))*sin(real(xt(n,2)))-bx)/bx
         r(n,1) =  interv*v2
         r(n,2) = -interv*v1
     end do
+    print*, r(1,1), r(1,2)
 
+    print*, sum(r)
     call fft(r, tilde)
-    ave = tilde(1,:)/ep!dot{Y}_underline^0th
+    print*, sum(tilde)
+    ave = real(tilde(1,:))/ep!dot{Y}_underline^0th
+
+    print*, " ave : ", ave
     do n=2,ntau
         tilde(n,:)=-im*tilde(n,:)/ltau(n)
     end do
@@ -185,6 +192,8 @@ do m=1,nbpart
 
     yt(:,1)=v1+(r(:,1)-r(1,1))
     yt(:,2)=v2+(r(:,2)-r(1,2))!yt1st
+
+    print*, " yt : ",  sum(yt(:,1)), sum(yt(:,2))
     !--more preparation--
 
     do n=1,ntau
@@ -209,8 +218,12 @@ do m=1,nbpart
     xt(:,1)=x1+h(:,1)-h(1,1)
     xt(:,2)=x2+h(:,2)-h(1,2)!x2nd,residue O(eps^3)
 
+    print*, " xt : ",  sum(xt(:,1)), sum(xt(:,2))
+
     p%e(1,m)=(0.5d0*cos(x1/2.d0)*sin(x2))*0.5d0*cos(time)
     p%e(2,m)=(sin(x1/2.d0)*cos(x2))*0.5d0*cos(time)!partial_tE
+
+    print*, p%e(1,1), p%e(2,1)
 
     do n=1,ntau
 
@@ -232,7 +245,14 @@ do m=1,nbpart
 
     end do
 
-    temp=fy+fx
+    temp = fy + fx
+    print*, " fx   : ", sum(fx(:,1)), sum(fx(:,2))
+    print*, " fy   : ", sum(fy(:,1)), sum(fy(:,2))
+    print*, " temp : ", sum(temp)
+    print*, ' ep   : ', ep
+    print*, ' bx   : ', bx
+    print*, ' ave  : ', ave
+    stop
 
     call fft(temp, tilde)
 

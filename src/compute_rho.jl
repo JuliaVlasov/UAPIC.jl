@@ -24,12 +24,12 @@
 
 end 
 
-export calcul_rho_m6!
+export compute_rho_m6!
 
-function calcul_rho_m6!( fields    :: MeshFields, 
-                         particles :: Particles, 
-                         xt        :: Array{ComplexF64,3},
-                         ua        :: UA ) 
+function compute_rho_m6!( fields    :: MeshFields, 
+                          particles :: Particles, 
+                          xt        :: Array{ComplexF64,3},
+                          ua        :: UA ) 
 
     fill!(fields.ρ , 0.0)
     nx, ny = fields.mesh.nx, fields.mesh.ny
@@ -178,7 +178,7 @@ function calcul_rho_m6!( fields    :: MeshFields,
 
 end 
 
-function calcul_rho_m6!( fields  :: MeshFields, particles :: Particles) 
+function compute_rho_m6!( fields  :: MeshFields, particles :: Particles) 
 
     fill!(fields.ρ , 0.0)
     nx = fields.mesh.nx

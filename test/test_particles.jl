@@ -40,7 +40,7 @@ end
 
      end
 
-     calcul_rho_m6!( fields, particles )
+     compute_rho_m6!( fields, particles )
 
      @test integrate( fields.ρ, mesh ) ≈ 0.0 atol = 1e-4
 

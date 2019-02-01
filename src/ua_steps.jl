@@ -96,7 +96,7 @@ function update_particles_x!( particles :: Particles,
                               ua        :: UA, 
                               xt        :: Array{ComplexF64,3}) 
 
-    calcul_rho_m6!( fields, particles, xt, ua )
+    compute_rho_m6!( fields, particles, xt, ua )
 
 end
 

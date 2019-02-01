@@ -58,7 +58,7 @@ function test_pic2d( ntau )
     gx = zeros(ComplexF64, (ntau, 2, nbpart))
     gy = zeros(ComplexF64, (ntau, 2, nbpart))
 
-    calcul_rho_m6!( fields, particles )
+    compute_rho_m6!( fields, particles )
 
     nrj =  poisson!( fields )
 
