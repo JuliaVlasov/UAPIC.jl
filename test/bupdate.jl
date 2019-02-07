@@ -1,8 +1,18 @@
 using Test
-using UAPIC
 using FFTW
 using LinearAlgebra
 
+include("../src/meshfields.jl")
+include("../src/ua_type.jl")
+include("../src/particles.jl")
+include("../src/compute_rho.jl")
+include("../src/gnuplot.jl")
+include("../src/integrate.jl")
+include("../src/interpolation.jl")
+include("../src/plasma.jl")
+include("../src/poisson.jl")
+include("../src/read_particles.jl")
+include("../src/ua_steps.jl")
 
 function test_pic2d( ntau )
 
@@ -30,7 +40,8 @@ function test_pic2d( ntau )
 
     fields = MeshFields( mesh )
     
-    particles = read_particles( "particles.dat", mesh )
+    #particles = read_particles( "particles.dat", mesh )
+    particles = plasma( mesh, 204800 )
 
     nbpart = particles.nbpart
 

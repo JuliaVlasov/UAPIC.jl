@@ -3,8 +3,8 @@ module ua_steps_m
 use ua_type_m
 use mesh_fields_m
 use particles_m
-use compute_rho_m
-use interpolation_m
+use m6_compute_rho_m
+use m6_interpolation_m
 
 implicit none
 

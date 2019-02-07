@@ -1,6 +1,6 @@
-module interpolation_m
+module m6_interpolation_m
 
-use compute_rho_m
+use m6_compute_rho_m
 use particles_m
 use mesh_fields_m
 
@@ -326,4 +326,4 @@ subroutine interpolate_eb_m6_real( particles, fields )
     
 end subroutine interpolate_eb_m6_real
 
-end module interpolation_m
+end module m6_interpolation_m

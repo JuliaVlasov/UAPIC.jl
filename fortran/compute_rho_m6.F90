@@ -1,4 +1,4 @@
-module compute_rho_m
+module m6_compute_rho_m
 
 use ua_type_m
 use particles_m
@@ -334,4 +334,4 @@ subroutine compute_rho_m6_real( fields, particles)
 
 end subroutine compute_rho_m6_real
 
-end module compute_rho_m
+end module m6_compute_rho_m

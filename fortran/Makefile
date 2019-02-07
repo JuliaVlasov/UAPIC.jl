@@ -1,14 +1,20 @@
-SRCS =	compute_rho.f90 interpolation.f90 meshfields.f90 particles.f90 \
+SRCS =	compute_rho_m6.f90 interpolation_m6.f90 meshfields.f90 particles.f90 \
 	    poisson.f90 ua_steps.f90 ua_type.f90 fft.f90
 
-OBJS =	compute_rho.o interpolation.o meshfields.o particles.o poisson.o \
+OBJS =	compute_rho_m6.o interpolation_m6.o meshfields.o particles.o poisson.o \
 	    ua_steps.o ua_type.o fft.o
 
 LIBS =	-lfftw3
 
 F90 = gfortran
-F90FLAGS = -I/usr/local/include -fstack-arrays -O0 -g -fbacktrace -pedantic -Wuninitialized -fcheck=array-temps,bounds,do,pointer,recursion -ffpe-trap=invalid,zero,overflow
+
+F90FLAGS = -I/usr/local/include -fstack-arrays -O0 -g -fbacktrace \
+           -pedantic -Wuninitialized \
+           -fcheck=array-temps,bounds,do,pointer,recursion \
+           -ffpe-trap=invalid,zero,overflow
+
 F90FLAGS = -I/usr/local/include -O3
+
 LDFLAGS = $(F90FLAGS)  
 
 all: bupdate efd
@@ -32,9 +38,9 @@ clean:
 
 meshfields.o: meshfields.f90
 particles.o: particles.f90 meshfields.o
-compute_rho.o: compute_rho.f90 meshfields.o particles.o ua_type.o
-interpolation.o: interpolation.f90 meshfields.o particles.o compute_rho.o
+compute_rho_m6.o: compute_rho_m6.f90 meshfields.o particles.o ua_type.o
+interpolation_m6.o: interpolation_m6.f90 meshfields.o particles.o compute_rho_m6.o
 poisson.o: poisson.f90 meshfields.o 
-ua_steps.o: ua_steps.f90 compute_rho.o meshfields.o particles.o ua_type.o
+ua_steps.o: ua_steps.f90 compute_rho_m6.o meshfields.o particles.o ua_type.o
 ua_type.o: ua_type.f90 
 fft.o: fft.f90

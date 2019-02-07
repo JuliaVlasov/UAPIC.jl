@@ -7,7 +7,7 @@ program efd
 use fft_m
 use mesh_fields_m, only: mesh_fields_t, mesh_t, init_mesh, init_mesh_fields
 use particles_m, only: init_particles, particles_t
-use compute_rho_m, only: compute_rho_m6_real
+use m6_compute_rho_m, only: compute_rho_m6_real
 
 implicit none
 
