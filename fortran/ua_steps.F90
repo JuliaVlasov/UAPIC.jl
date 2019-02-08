@@ -116,11 +116,11 @@ end subroutine preparation
 
 subroutine interpolation( particles, et, fields, ua, xt ) 
 
-    type(particles_t),   intent(inout)  :: particles
-    real(8),             intent(out)    :: et(:,:,:)
-    type(mesh_fields_t), intent(in)     :: fields
-    type(ua_t),          intent(in)     :: ua
-    complex(8),          intent(in)     :: xt(:,:,:)
+    type(particles_t), intent(inout)  :: particles
+    real(8),           intent(out)    :: et(:,:,:)
+    type(fields_2d_t), intent(in)     :: fields
+    type(ua_t),        intent(in)     :: ua
+    complex(8),        intent(in)     :: xt(:,:,:)
 
     call interpolate_eb_m6_complex( et, fields, xt, particles%nbpart, ua%ntau) 
 
@@ -128,10 +128,10 @@ end subroutine interpolation
 
 subroutine deposition( particles, fields, ua, xt) 
 
-    type(particles_t),   intent(inout) :: particles
-    type(mesh_fields_t), intent(inout) :: fields
-    type(ua_t),          intent(inout) :: ua
-    complex(8),          intent(in)    :: xt(:,:,:)
+    type(particles_t), intent(inout) :: particles
+    type(fields_2d_t), intent(inout) :: fields
+    type(ua_t),        intent(inout) :: ua
+    complex(8),        intent(in)    :: xt(:,:,:)
 
     call compute_rho_m6_complex( fields, particles, xt, ua )
 

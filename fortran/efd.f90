@@ -5,15 +5,15 @@
 program efd
 
 use fft_m
-use mesh_fields_m, only: mesh_fields_t, mesh_t, init_mesh, init_mesh_fields
-use particles_m, only: init_particles, particles_t
+use mesh_fields_m, only: fields_2d_t, mesh_t, init_mesh, init_fields
+use particles_m, only: init_particles_2d, particles_t
 use m6_compute_rho_m, only: compute_rho_m6_real
 
 implicit none
 
-type(mesh_t)        :: mesh
-type(mesh_fields_t) :: f
-type(particles_t)   :: p
+type(mesh_t)      :: mesh
+type(fields_2d_t) :: f
+type(particles_t) :: p
 
 integer, parameter :: ntau = 16
 integer, parameter :: npp  = 204800
@@ -65,8 +65,9 @@ character(len=272) :: argv
 
 integer, parameter :: nx = 128
 integer, parameter :: ny = 64
-integer :: nbpart
-integer :: nstep
+
+integer(8) :: nbpart
+integer    :: nstep
 
 real(8) :: alpha
 real(8) :: dt
@@ -81,6 +82,7 @@ real(8) :: tfinal
 real(8) :: pi
 real(8) :: poids
 real(8) :: x1, x2, v1, v2
+
 complex(8), parameter :: im = (0d0, 1d0)
 
 
@@ -118,8 +120,8 @@ ymin = 0.0_8; ymax = dimy
 nbpart = npp
 
 call init_mesh( mesh, xmin, xmax, nx, ymin, ymax, ny )
-call init_mesh_fields( f, mesh )
-call init_particles( p, nbpart, mesh, alpha, kx )
+call init_fields( f, mesh )
+call init_particles_2d( p, nbpart, mesh, alpha, kx )
 
 print"('ep = ', g15.3)", ep
 print"('dt = ', g15.3)", dt

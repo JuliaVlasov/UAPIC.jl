@@ -31,10 +31,10 @@ contains
 
 subroutine init_ua( ua, ntau, eps, nbpart )
 
-    type(ua_t)          :: ua
-    integer, intent(in) :: ntau
-    real(8), intent(in) :: eps
-    integer, intent(in) :: nbpart
+    type(ua_t)             :: ua
+    integer,    intent(in) :: ntau
+    real(8),    intent(in) :: eps
+    integer(8), intent(in) :: nbpart
 
     real(8) :: dtau
 

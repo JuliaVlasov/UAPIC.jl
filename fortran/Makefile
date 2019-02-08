@@ -1,10 +1,10 @@
 SRCS =	compute_rho_m6.f90 interpolation_m6.f90 meshfields.f90 particles.f90 \
-	    poisson.f90 ua_steps.f90 ua_type.f90 fft.f90
+	    poisson_2d.f90 poisson_3d.f90 ua_steps.f90 ua_type.f90 fft.f90 \
+        output.f90 interpolation_cic.f90 compute_rho_cic.f90
 
-OBJS =	compute_rho_m6.o interpolation_m6.o meshfields.o particles.o poisson.o \
-	    ua_steps.o ua_type.o fft.o
+OBJS =	$(SRCS:.f90=.o)
 
-LIBS =	-lfftw3
+LIBS =	-lfftw3 -lhdf5_fortran -lhdf5
 
 F90 = gfortran
 
@@ -17,12 +17,18 @@ F90FLAGS = -I/usr/local/include -O3
 
 LDFLAGS = $(F90FLAGS)  
 
-all: bupdate efd
+all: bupdate efd test_poisson_3d test_pic_3d
 
 bupdate: bupdate.f90 $(OBJS)
 	$(F90) $(LDFLAGS) $< -o $@ $(OBJS) $(LIBS)
 
 efd: efd.f90 $(OBJS)
+	$(F90) $(LDFLAGS) $< -o $@ $(OBJS) $(LIBS)
+
+test_poisson_3d: test_poisson_3d.f90 $(OBJS)
+	$(F90) $(LDFLAGS) $< -o $@ $(OBJS) $(LIBS)
+
+test_pic_3d: test_pic_3d.f90 $(OBJS)
 	$(F90) $(LDFLAGS) $< -o $@ $(OBJS) $(LIBS)
 
 clean:
@@ -40,7 +46,11 @@ meshfields.o: meshfields.f90
 particles.o: particles.f90 meshfields.o
 compute_rho_m6.o: compute_rho_m6.f90 meshfields.o particles.o ua_type.o
 interpolation_m6.o: interpolation_m6.f90 meshfields.o particles.o compute_rho_m6.o
-poisson.o: poisson.f90 meshfields.o 
+poisson_2d.o: poisson_2d.f90 meshfields.o 
 ua_steps.o: ua_steps.f90 compute_rho_m6.o meshfields.o particles.o ua_type.o
 ua_type.o: ua_type.f90 
 fft.o: fft.f90
+poisson_3d.o: poisson_3d.f90 meshfields.o
+output.o: output.f90 meshfields.o
+interpolation_cic.o: interpolation_cic.f90 particles.o
+compute_rho_cic.o: compute_rho_cic.f90 particles.o

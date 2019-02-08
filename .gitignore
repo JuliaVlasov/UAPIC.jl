@@ -12,3 +12,5 @@ fortran/uapic2d
 fortran/efd
 fortran/bupdate
 fortran/*.dSYM/
+*.h5
+*.xmf

@@ -2,7 +2,7 @@ program uapic_2d
 
     use mesh_fields_m
     use particles_m
-    use poisson_m
+    use poisson_2d_m
     use m6_interpolation_m
     use m6_compute_rho_m
     use ua_steps_m
@@ -10,25 +10,25 @@ program uapic_2d
     implicit none
 
 
-    real(8), parameter :: alpha    = 0.05d0 
-    real(8), parameter :: kx       = 0.5d0
-    real(8), parameter :: ky       = 1d0
-    integer, parameter :: nx       = 128
-    integer, parameter :: ny       = 64 
-    real(8), parameter :: eps      = 0.1d0
-    integer, parameter :: nbpart   = 204800
-    integer, parameter :: ntau     = 16
+    real(8),    parameter :: alpha    = 0.05d0 
+    real(8),    parameter :: kx       = 0.5d0
+    real(8),    parameter :: ky       = 1d0
+    integer,    parameter :: nx       = 128
+    integer,    parameter :: ny       = 64 
+    real(8),    parameter :: eps      = 0.1d0
+    integer(8), parameter :: nbpart   = 204800_8
+    integer,    parameter :: ntau     = 16
    
     real(8)    :: t = 0d0
     complex(8) :: elt
 
     real(8) :: tfinal   = 1.0d0 
 
-    type(mesh_t)        :: mesh
-    type(mesh_fields_t) :: fields
-    type(particles_t)   :: particles
-    type(poisson_t)     :: poisson
-    type(ua_t)          :: ua
+    type(mesh_t)      :: mesh
+    type(fields_2d_t) :: fields
+    type(particles_t) :: particles
+    type(poisson_t)   :: poisson
+    type(ua_t)        :: ua
 
     complex(8), allocatable :: xt(:,:,:)
     complex(8), allocatable :: xf(:,:,:)
@@ -68,9 +68,9 @@ program uapic_2d
 
     nstep  = floor(tfinal/dt)
 
-    call init_mesh_fields(fields, mesh )
+    call init_fields(fields, mesh )
     
-    call init_particles( particles, nbpart, mesh, alpha, kx )
+    call init_particles_2d( particles, nbpart, mesh, alpha, kx )
 
     call init_poisson( poisson, mesh )
 

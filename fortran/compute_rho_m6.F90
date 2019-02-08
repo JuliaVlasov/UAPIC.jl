@@ -46,14 +46,14 @@ end function f_m6
 
 subroutine compute_rho_m6_complex( fields, particles, xt, ua ) 
 
-    type(mesh_fields_t)  :: fields
-    type(particles_t)    :: particles
-    complex(8)           :: xt(:,:,:)
-    type(ua_t)           :: ua
+    type(fields_2d_t)  :: fields
+    type(particles_t)  :: particles
+    complex(8)         :: xt(:,:,:)
+    type(ua_t)         :: ua
 
-    complex(8)           :: t
-    real(8)              :: xt1
-    real(8)              :: xt2
+    complex(8)         :: t
+    real(8)            :: xt1
+    real(8)            :: xt2
 
     fields%rho = 0d0
 
@@ -204,8 +204,8 @@ end subroutine compute_rho_m6_complex
 
 subroutine compute_rho_m6_real( fields, particles) 
 
-    type(mesh_fields_t) :: fields
-    type(particles_t)   :: particles
+    type(fields_2d_t) :: fields
+    type(particles_t) :: particles
 
     fields%rho = 0d0
 

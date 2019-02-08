@@ -1,4 +1,4 @@
-module poisson_m
+module poisson_2d_m
 
 use, intrinsic :: iso_c_binding 
 
@@ -84,8 +84,8 @@ contains
 
     subroutine solve_poisson ( self, fields )
 
-        type(poisson_t)       :: self
-        type(mesh_fields_t)   :: fields
+        type(poisson_t)     :: self
+        type(fields_2d_t)   :: fields
 
         integer               :: nx
         integer               :: ny
@@ -110,4 +110,4 @@ contains
 
     end subroutine solve_poisson
 
-end module poisson_m
+end module poisson_2d_m

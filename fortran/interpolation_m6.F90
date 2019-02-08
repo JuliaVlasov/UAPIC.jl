@@ -39,11 +39,11 @@ contains
 
 subroutine interpolate_eb_m6_complex( e, fields, x, nbpart, ntau )
 
-    real(8),             intent(out) :: e(:,:,:)
-    type(mesh_fields_t), intent(in)  :: fields
-    complex(8),          intent(in)  :: x(:,:,:)
-    integer,             intent(in)  :: nbpart
-    integer,             intent(in)  :: ntau
+    real(8),           intent(out) :: e(:,:,:)
+    type(fields_2d_t), intent(in)  :: fields
+    complex(8),        intent(in)  :: x(:,:,:)
+    integer(8),        intent(in)  :: nbpart
+    integer,           intent(in)  :: ntau
 
     real(8)             :: xmin
     real(8)             :: xmax
@@ -192,8 +192,8 @@ end subroutine interpolate_eb_m6_complex
 
 subroutine interpolate_eb_m6_real( particles, fields )
 
-    type(particles_t)   :: particles
-    type(mesh_fields_t) :: fields
+    type(particles_t) :: particles
+    type(fields_2d_t) :: fields
 
     integer :: nx
     integer :: ny
