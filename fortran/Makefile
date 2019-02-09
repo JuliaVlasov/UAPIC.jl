@@ -1,5 +1,5 @@
 SRCS =	compute_rho_m6.f90 interpolation_m6.f90 meshfields.f90 particles.f90 \
-	    poisson_2d.f90 poisson_3d.f90 ua_steps.f90 ua_type.f90 fft.f90 \
+	poisson_2d.f90 poisson_3d.f90 ua_steps.f90 ua_type.f90 fft.f90 \
         output.f90 interpolation_cic.f90 compute_rho_cic.f90
 
 OBJS =	$(SRCS:.f90=.o)
@@ -17,7 +17,8 @@ F90FLAGS = -I/usr/local/include -O3
 
 LDFLAGS = $(F90FLAGS)  
 
-all: bupdate efd test_poisson_3d test_pic_3d
+PROG = bupdate efd test_poisson_3d test_pic_3d uapic3d
+all: $(PROG)
 
 bupdate: bupdate.f90 $(OBJS)
 	$(F90) $(LDFLAGS) $< -o $@ $(OBJS) $(LIBS)
@@ -31,8 +32,11 @@ test_poisson_3d: test_poisson_3d.f90 $(OBJS)
 test_pic_3d: test_pic_3d.f90 $(OBJS)
 	$(F90) $(LDFLAGS) $< -o $@ $(OBJS) $(LIBS)
 
+uapic3d: uapic3d.f90 $(OBJS)
+	$(F90) $(LDFLAGS) $< -o $@ $(OBJS) $(LIBS)
+
 clean:
-	rm -f $(PROG) $(OBJS) *.mod
+	rm -f $(PROG) $(OBJS) *.mod *.o
 
 .SUFFIXES: $(SUFFIXES) .f90
 

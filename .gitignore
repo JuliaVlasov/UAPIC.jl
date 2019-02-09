@@ -14,3 +14,4 @@ fortran/bupdate
 fortran/*.dSYM/
 *.h5
 *.xmf
+fortran/uapic3d

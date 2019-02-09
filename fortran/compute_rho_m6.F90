@@ -25,9 +25,9 @@ real(8), private :: dimy
 
 contains
 
-function f_m6( q )
+pure function f_m6( q )
 
-    real(8) :: q
+    real(8), intent(in)  :: q
     real(8) :: f_m6
 
     if ( q < 1d0 )  then
