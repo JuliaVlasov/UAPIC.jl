@@ -1,5 +1,13 @@
 # UAPIC.jl
 
+![Lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)<!--
+![Lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)
+![Lifecycle](https://img.shields.io/badge/lifecycle-stable-green.svg)
+![Lifecycle](https://img.shields.io/badge/lifecycle-retired-orange.svg)
+![Lifecycle](https://img.shields.io/badge/lifecycle-archived-red.svg)
+![Lifecycle](https://img.shields.io/badge/lifecycle-dormant-blue.svg) -->
+
+
 Uniformly Accurate scheme implementation for 4d Vlasov-Poisson PIC simulation
 
 **NOTE: This package is still very much under development and is not fully tested.**
