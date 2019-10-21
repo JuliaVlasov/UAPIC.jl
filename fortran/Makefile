@@ -4,7 +4,7 @@ SRCS =	compute_rho_m6.f90 interpolation_m6.f90 meshfields.f90 particles.f90 \
 
 OBJS =	$(SRCS:.f90=.o)
 
-LIBS =	-lfftw3 -lhdf5_fortran -lhdf5
+LIBS =	-L/usr/local/lib -lfftw3 -lhdf5_fortran -lhdf5
 
 F90 = gfortran
 

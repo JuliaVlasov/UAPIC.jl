@@ -10,5 +10,6 @@ include("gnuplot.jl")
 include("poisson.jl")
 include("particles.jl")
 include("ua_steps.jl")
+include("landau.jl")
 
 end # module
