@@ -18,3 +18,4 @@ fortran/uapic3d
 fortran/test_pic_3d
 fortran/test_poisson_3d
 Manifest.toml
+fortran/test_3d
