@@ -7,13 +7,19 @@
 ![Lifecycle](https://img.shields.io/badge/lifecycle-archived-red.svg)
 ![Lifecycle](https://img.shields.io/badge/lifecycle-dormant-blue.svg) -->
 
-
 Uniformly Accurate scheme implementation for 4d Vlasov-Poisson PIC simulation
 
 **NOTE: This package is still very much under development and is not fully tested.**
 
 - UA scheme for 4d Vlasov-Poisson in Fluid-scaling with b(x). Update b(x(tn)) every step.
 
+Algorithm is described in the paper
+
+*Uniformly accurate methods for Vlasov equations with non-homogeneous strong magnetic field*
+
+Philippe Chartier, Nicolas Crouseilles, Mohammed Lemou, Florian Mehats, Xiaofei Zhao
+
+[pdf on arXiv.org](https://arxiv.org/abs/1802.03067)
 
 - Fortran reference program `bupdate` in `fortran` directory
 ```
