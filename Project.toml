@@ -1,6 +1,6 @@
 name = "UAPIC"
 uuid = "f56b100c-17f8-11e9-08c2-1bfb74aea2a1"
-authors = ["Pierre Navaro <pierre.navaro@math.cnrs.fr>"]
+authors = "JuliaVlasov"
 version = "0.1.0"
 
 [deps]
