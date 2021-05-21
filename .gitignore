@@ -4,7 +4,6 @@
 deps/deps.jl
 *.swp
 Manifest.toml
-*.dat
 *.mem
 *.o
 *.mod
