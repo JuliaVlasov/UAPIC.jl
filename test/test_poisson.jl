@@ -9,13 +9,13 @@
     fields = MeshFields( mesh )
     solutions = MeshFields( mesh)
 
-    x = range(mesh.xmin, stop=mesh.xmax, length=mesh.nx+1) |> collect
-    y = range(mesh.ymin, stop=mesh.ymax, length=mesh.ny+1) |> collect
+    x = LinRange(mesh.xmin, mesh.xmax, mesh.nx+1)
+    y = LinRange(mesh.ymin, mesh.ymax, mesh.ny+1) 
     
-    fields.ρ  .= - 8 * sin.(2*x) .* cos.(2*y')
+    fields.ρ  .= - 8 .* sin.(2 .* x) .* cos.(2 .* y')
 
-    solutions.e[1,:,:] .=   2 * (cos.(2 .* x) .* cos.(2 .* y'))
-    solutions.e[2,:,:] .= - 2 * (sin.(2 .* x) .* sin.(2 .* y'))
+    solutions.e[1,:,:] .=   2 .* cos.(2 .* x) .* cos.(2 .* y')
+    solutions.e[2,:,:] .= - 2 .* sin.(2 .* x) .* sin.(2 .* y')
 
     poisson! = Poisson( mesh )
 

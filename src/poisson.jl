@@ -49,9 +49,8 @@ struct Poisson
         ky .= ky ./ k2
 
         ρ̃ = zeros(ComplexF64,(nx÷2+1,ny))
-
-        fft_ex = similar(ρ̃)
-        fft_ey = similar(ρ̃)
+        fft_ex = zeros(ComplexF64,(nx÷2+1,ny))
+        fft_ey = zeros(ComplexF64,(nx÷2+1,ny))
 
         new( mesh, kx, ky, ρ̃, fft_ex, fft_ey)
 
@@ -65,7 +64,7 @@ function ( p :: Poisson )( fields :: MeshFields )
     nx, ny = p.mesh.nx, p.mesh.ny
     dx, dy = p.mesh.dx, p.mesh.dy
 
-    p.ρ̃ .= rfft(view(fields.ρ,1:nx,1:ny))
+    p.ρ̃ .= rfft(fields.ρ[1:nx,1:ny])
 
     p.fft_ex .= -1im .* p.kx .* p.ρ̃
     p.fft_ey .= -1im .* p.ky .* p.ρ̃

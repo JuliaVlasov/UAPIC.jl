@@ -1,20 +1,11 @@
 using Test
 using FFTW
 using LinearAlgebra
+using UAPIC
 
-include("../src/meshfields.jl")
-include("../src/ua_type.jl")
-include("../src/particles.jl")
-include("../src/compute_rho.jl")
-include("../src/gnuplot.jl")
-include("../src/integrate.jl")
-include("../src/interpolation.jl")
-include("../src/plasma.jl")
-include("../src/poisson.jl")
-include("../src/read_particles.jl")
-include("../src/ua_steps.jl")
+@testset "pic2d" begin
 
-function test_pic2d( ntau )
+    ntau = 16
 
     kx       = 0.50
     ky       = 1.0
@@ -123,10 +114,4 @@ function test_pic2d( ntau )
     end
 
 
-    true
-
 end 
-
-const ntau = 16
-
-@time test_pic2d( ntau )
