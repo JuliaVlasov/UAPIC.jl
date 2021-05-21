@@ -11,5 +11,6 @@ include("poisson.jl")
 include("particles.jl")
 include("ua_steps.jl")
 include("landau.jl")
+include("compute_rho_cic.jl")
 
 end # module
