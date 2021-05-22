@@ -13,3 +13,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 StaticArrays = "1.2"
+FFTW = "1.4"
+AbstractFFTs = "1.0"
+Sobol = "1.5"
